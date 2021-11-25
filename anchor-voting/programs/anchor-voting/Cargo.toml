@@ -1,5 +1,5 @@
 [package]
-name = "program"
+name = "anchor-voting"
 version = "0.1.0"
 description = "Created with Anchor"
 edition = "2018"
@@ -11,10 +11,10 @@ name = "anchor_voting"
 [features]
 no-entrypoint = []
 no-idl = []
+no-log-ix-name = []
 cpi = ["no-entrypoint"]
 default = []
 
 [dependencies]
 anchor-lang = "0.18.2"
 anchor-spl = {version = "0.18.2"}
-spl-token = {version = "3.1.1", features = ["no-entrypoint"]}

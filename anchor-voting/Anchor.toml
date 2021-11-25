@@ -1,5 +1,5 @@
 [programs.localnet]
-program = "E7T5m2vsc2xrzjGxU4Khh2Qz2nFJHKudyvFoJM6fLjaa"
+anchor_voting = "HRNkDCeaArkBn2mM3pMa1JwAMmgaNgWpXnPYeNq5eFvg"
 
 [registry]
 url = "https://anchor.projectserum.com"
