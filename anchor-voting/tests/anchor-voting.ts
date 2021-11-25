@@ -47,8 +47,34 @@ describe("anchor-voting", () => {
     console.log("🗳 Proposal List: ", account.proposalList);
   });
 
-  it("Can vote on a proposal!", async () => {
-    await program.rpc.addProposal("Test Title", "Test Description", {
+  it("Can vote for a proposal!", async () => {
+    await program.rpc.voteForProposal(new anchor.BN(0), true, {
+      accounts: {
+        baseAccount: baseAccount.publicKey,
+        user: provider.wallet.publicKey,
+      },
+    });
+    const account = await program.account.baseAccount.fetch(
+      baseAccount.publicKey
+    );
+    assert.ok(account.totalProposalCount.toNumber() === 1);
+    console.log("🗳 Proposal List: ", account.proposalList);
+  });
 
+  it("Can not vote for a same proposal twice!", async () => {
+    await assert.rejects(
+      async () => {
+        await program.rpc.voteForProposal(new anchor.BN(0), true, {
+          accounts: {
+            baseAccount: baseAccount.publicKey,
+            user: provider.wallet.publicKey,
+          },
+        });
+      },
+      {
+        name: "Error",
+        message: "302: You have already voted return for this proposal",
+      }
+    );
   });
 });

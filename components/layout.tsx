@@ -11,7 +11,7 @@ export const Layout: React.FC = ({ children }) => {
       <div className={"w-full max-w-5xl mb-4"}>
         <Navbar />
       </div>
-      <div className={"max-w-5xl"}>{children}</div>
+      <div className={"w-full max-w-5xl"}>{children}</div>
       <div className={"absolute bottom-0 left-0 h-16 w-16"}>
         <RequestAirdrop />
       </div>

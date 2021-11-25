@@ -1,5 +1,6 @@
 import type { NextPage } from "next";
 import Head from "next/head";
+import { ProposalList } from "../components/proposal_list";
 
 const Home: NextPage = () => {
   return (
@@ -12,6 +13,7 @@ const Home: NextPage = () => {
 
       <main className={"w-full max-w-5xl"}>
         <h1>Crowdfund $Sol</h1>
+        <ProposalList />
       </main>
     </>
   );

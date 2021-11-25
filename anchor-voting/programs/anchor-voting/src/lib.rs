@@ -4,6 +4,7 @@ declare_id!("HRNkDCeaArkBn2mM3pMa1JwAMmgaNgWpXnPYeNq5eFvg");
 
 #[program]
 mod anchor_voting {
+
     use super::*;
     
     pub fn initialize_voting(ctx: Context<InitializeVoting>) -> ProgramResult {
@@ -21,7 +22,9 @@ mod anchor_voting {
             title,
             owner: *user.to_account_info().key,
             description,
-            votes: vec![],
+            voted_users: Vec::new(),
+            vote_count: 0,
+            vote: 0
         };
 
         base_account.proposal_list.push(proposal);
@@ -29,11 +32,29 @@ mod anchor_voting {
         Ok(())
     }
 
-    // pub fn vote_for_proposal(ctx: Context<VoteForProposal>, proposal_id: u32, vote: bool) -> ProgramResult {
-    //     let base_account = &mut ctx.accounts.base_account;
+    pub fn vote_for_proposal(ctx: Context<VoteForProposal>, index: u64, vote: bool ) -> ProgramResult {
+        let base_account = &mut ctx.accounts.base_account;
+        let user = &mut ctx.accounts.user;
+        let proposal =  base_account.proposal_list.get_mut(index as usize);
+        if let None = proposal {
+            return Err(ErrorCode::ProposalIndexOutOfBounds.into());
+        }
+        let proposal = proposal.unwrap();
+        // if proposal.owner == *user.to_account_info().key {
+        //     return Err(ErrorCode::YouCannotVoteForYourOwnProposal.into());
+        // }
 
-    //     Ok(())
-    // }
+        if proposal.voted_users.contains(&*user.to_account_info().key) {
+            return Err(ErrorCode::YouAlreadyVotedForThisProposal.into());
+        }
+
+        proposal.voted_users.push(*user.to_account_info().key);
+        let vote_value = if vote { 1 } else { -1 };
+        proposal.vote += vote_value;
+        proposal.vote_count += 1;
+
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -54,22 +75,21 @@ pub struct AddProposal<'info> {
 }
 
 
-// #[derive(Accounts)]
-// pub struct VoteForProposal<'info> {
-//     #[account(mut)]
-//     pub base_account: Account<'info, BaseAccount>,
-//     #[account(mut)]
-//     pub user: Signer<'info>,
-// }
+#[derive(Accounts)]
+pub struct VoteForProposal<'info> {
+    #[account(mut)]
+    pub base_account: Account<'info, BaseAccount>,
+    #[account(mut)]
+    pub user: Signer<'info>,
+}
 
 
 
 
-#[derive(Debug,  Clone, AnchorSerialize, AnchorDeserialize)]
-pub struct Vote {
-    pub proposal_id: u64,
-    pub voter_id: Pubkey,
-    pub vote: bool,
+#[derive(Debug, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
+pub enum Vote {
+  Down = -1,
+  Up   =  1,
 }
 
 // Tell Solana what we want to store on this account.
@@ -81,10 +101,28 @@ pub struct BaseAccount {
 
 
 #[derive(Debug,  Clone, AnchorSerialize, AnchorDeserialize)]
+pub struct UserVote {
+    pub owner: Pubkey,
+    pub vote: Vote,
+}
+
+#[derive(Debug,  Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct Proposal {
     pub id: u64,
     pub title: String,
     pub description: String,
     pub owner: Pubkey,
-    pub votes: Vec<Vote>,
+    pub voted_users: Vec<Pubkey>,
+    pub vote_count: u64,
+    pub vote: i64
+}
+
+#[error]
+pub enum ErrorCode {
+    #[msg("No Proposal at this index")]
+    ProposalIndexOutOfBounds,
+    #[msg("You can not vote for your own proposal")]
+    YouCannotVoteForYourOwnProposal,
+    #[msg("You have already voted return for this proposal")]
+    YouAlreadyVotedForThisProposal,
 }
