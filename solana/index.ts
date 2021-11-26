@@ -1,4 +1,7 @@
-import { Program, Provider, web3 } from "@project-serum/anchor";
+import { useProposalList } from './index';
+import { ProposalList } from "./../components/proposal_list";
+import { message } from "antd";
+import { Program, Provider, web3, BN } from "@project-serum/anchor";
 import {
   clusterApiUrl,
   Connection,
@@ -6,8 +9,9 @@ import {
   PublicKey,
 } from "@solana/web3.js";
 import { AnchorVoting } from "../anchor-voting/target/types/anchor_voting";
-import idl from "./idl.json";
+import idl from "../anchor-voting/target/idl/anchor_voting.json";
 import kp from "../keypair.json";
+import useSWR, { mutate } from "swr";
 
 export const PROGRAM_ID = new PublicKey(idl.metadata.address);
 
@@ -35,14 +39,33 @@ export const createProposal = async (proposal: {
 }) => {
   const provider = getProvider();
   const program = getProgram();
-  console.log("Proposal:", proposal);
   await program.rpc.addProposal(proposal.title, proposal.description, {
     accounts: {
       baseAccount: baseAccount.publicKey,
       user: provider.wallet.publicKey,
     },
   });
-  console.log("Proposal created", proposal);
+  mutate("/baseAccount");
+};
+
+export const voteForProposal = async (id: BN, vote: boolean) => {
+  const hide = message.loading("Voting in progress..", 0);
+  try {
+    const provider = getProvider();
+    const program = getProgram();
+    await program.rpc.voteForProposal(new BN(id), vote, {
+      accounts: {
+        baseAccount: baseAccount.publicKey,
+        user: provider.wallet.publicKey,
+      },
+    });
+    mutate("/baseAccount");
+    message.success("Voted");
+  } catch (err: Error) {
+    message.error(err?.message);
+  } finally {
+    setTimeout(hide, 100);
+  }
 };
 
 const getProgram = (): Program<AnchorVoting> => {
@@ -55,6 +78,26 @@ const getProgram = (): Program<AnchorVoting> => {
   return program;
 };
 
+const programFetcher = async (...args) => {
+  const provider = getProvider();
+  const program: Program<AnchorVoting> = new Program(
+    idl as any,
+    PROGRAM_ID,
+    provider
+  );
+  return program.account.baseAccount.fetch(baseAccount.publicKey);
+};
+
+export const useBaseAccount = () => {
+  const { data, error } = useSWR(`/baseAccount`, programFetcher);
+  return {
+    baseAccount: data,
+    isLoading: !error && !data,
+    isError: error,
+  };
+};
+
+
 export const getProposalList = async () => {
   try {
     const provider = getProvider();
@@ -66,7 +109,8 @@ export const getProposalList = async () => {
     const account = await program.account.baseAccount.fetch(
       baseAccount.publicKey
     );
-    console.log("Account:", account);
+
+    console.log("Account:", account.proposalList);
     return account.proposalList;
   } catch (e) {
     console.log("Error getting proposal list:", e);

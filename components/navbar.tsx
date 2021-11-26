@@ -1,27 +1,21 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import {
-  WalletDisconnectButton,
   WalletMultiButton,
 } from "@solana/wallet-adapter-ant-design";
 
 export const Navbar = () => {
   return (
-    <div className="mb-2 shadow-lg bg-neutral text-neutral-content rounded-box  flex flex-row rounded bg-gray-400 items-center">
-      <div className="px-2 mx-2 ">
-        <span className="text-lg font-bold">SOL $CROWD</span>
-      </div>
-      <div className="px-2 mx-2 navbar-center lg:flex ">
-        <div className="flex items-stretch ">
-          <NavButton href={"/"} text={"Home"} />
-          <NavButton href={"/create"} text={"Create"} />
+    <>
+      <div className="flex flex-row items-center justify-between mb-2 bg-gray-400 rounded shadow-lg bg-neutral text-neutral-content rounded-box">
+        <div className="px-2 mx-2 ">
+          <span className="text-lg font-bold">ANCHOR VOTING</span>
         </div>
-        <div className={"flex flex-end ml-auto"}>
+        <div className={"w-40"}>
           <WalletMultiButton />
-          <WalletDisconnectButton />
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

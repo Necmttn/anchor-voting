@@ -5,7 +5,7 @@ export const Layout: React.FC = ({ children }) => {
   return (
     <main
       className={
-        "flex flex-col items-center w-screen py-4 px-2 sm:px-none min-h-screen"
+        "flex flex-col items-center w-screen py-4 px-2 sm:px-none min-h-screen bg-gray-100"
       }
     >
       <div className={"w-full max-w-5xl mb-4"}>

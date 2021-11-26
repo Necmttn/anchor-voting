@@ -24,7 +24,8 @@ mod anchor_voting {
             description,
             voted_users: Vec::new(),
             vote_count: 0,
-            vote: 0
+            vote_yes: 0,
+            vote_no: 0,
         };
 
         base_account.proposal_list.push(proposal);
@@ -40,17 +41,17 @@ mod anchor_voting {
             return Err(ErrorCode::ProposalIndexOutOfBounds.into());
         }
         let proposal = proposal.unwrap();
-        // if proposal.owner == *user.to_account_info().key {
-        //     return Err(ErrorCode::YouCannotVoteForYourOwnProposal.into());
-        // }
 
         if proposal.voted_users.contains(&*user.to_account_info().key) {
             return Err(ErrorCode::YouAlreadyVotedForThisProposal.into());
         }
 
         proposal.voted_users.push(*user.to_account_info().key);
-        let vote_value = if vote { 1 } else { -1 };
-        proposal.vote += vote_value;
+        if vote {
+            proposal.vote_yes += 1
+        } else {
+            proposal.vote_no += 1
+        }
         proposal.vote_count += 1;
 
         Ok(())
@@ -114,15 +115,14 @@ pub struct Proposal {
     pub owner: Pubkey,
     pub voted_users: Vec<Pubkey>,
     pub vote_count: u64,
-    pub vote: i64
+    pub vote_yes: u64,
+    pub vote_no: u64,
 }
 
 #[error]
 pub enum ErrorCode {
     #[msg("No Proposal at this index")]
     ProposalIndexOutOfBounds,
-    #[msg("You can not vote for your own proposal")]
-    YouCannotVoteForYourOwnProposal,
-    #[msg("You have already voted return for this proposal")]
+    #[msg("You have already voted for this proposal")]
     YouAlreadyVotedForThisProposal,
 }

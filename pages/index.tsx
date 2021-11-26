@@ -1,5 +1,6 @@
 import type { NextPage } from "next";
 import Head from "next/head";
+import { CreateProposalModal } from "../components/create_proposal";
 import { ProposalList } from "../components/proposal_list";
 
 const Home: NextPage = () => {
@@ -12,7 +13,7 @@ const Home: NextPage = () => {
       </Head>
 
       <main className={"w-full max-w-5xl"}>
-        <h1>Crowdfund $Sol</h1>
+        <CreateProposalModal />
         <ProposalList />
       </main>
     </>

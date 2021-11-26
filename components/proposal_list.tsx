@@ -1,24 +1,20 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { getProposalList } from "../solana";
+import { getProposalList, useBaseAccount, voteForProposal } from "../solana";
+import { Button, Progress } from "antd";
+import { IdlTypes } from "@project-serum/anchor";
+import { AnchorVoting } from "../anchor-voting/target/types/anchor_voting";
 
 export const ProposalList = () => {
-  const { wallet } = useWallet();
-  const [proposals, setProposals] = useState([]);
-
-  // TODO: use SWR for caching
-  useEffect(() => {
-    (async () => {
-      const p = await getProposalList();
-      console.log(p);
-      setProposals(p);
-    })();
-  }, [wallet]);
+  const { baseAccount } = useBaseAccount();
+  const proposals =
+    (baseAccount?.proposalList as IdlTypes<AnchorVoting>["Proposal"][]) || [];
   return (
-    <div className={"w-full flex flex-col bg-gray-50 h-full px-2"}>
+    <div className={"w-full flex flex-col py-8 h-full "}>
       <h1>Proposal List</h1>
+      {baseAccount?.totalProposalCount.toNumber()}
       <div className={"flex flex-col space-y-4 p-2"}>
-        {proposals.map((p) => (
+        {proposals.reverse().map((p) => (
           <ProposalItem key={`proposal_${p?.id.toNumber()}`} proposal={p} />
         ))}
       </div>
@@ -26,7 +22,20 @@ export const ProposalList = () => {
   );
 };
 
-const ProposalItem = ({ proposal }) => {
+const ProposalItem = ({
+  proposal,
+}: {
+  proposal: IdlTypes<AnchorVoting>["Proposal"];
+}) => {
+  const handleOnVote = async (vote: boolean) => {
+    await voteForProposal(proposal.id, vote);
+  };
+  const { publicKey } = useWallet();
+  const hasVoted =
+    publicKey && proposal.votedUsers.some((k) => k.equals(publicKey));
+  const voteCount = proposal.voteCount.toNumber();
+  const voteYes = proposal.voteYes.toNumber();
+  const voteNo = proposal.voteNo.toNumber();
   return (
     <div className={"p-2 rounded shadow bg-white "}>
       <div className={"flex justify-between"}>
@@ -37,12 +46,31 @@ const ProposalItem = ({ proposal }) => {
           </span>{" "}
           {proposal.title}
         </h2>
-        <div className={"flex space-x-2 text-lg"}>
-          <div>👍</div>
-          <div>👎</div>
-        </div>
+        {hasVoted ? (
+          <div className="p-2 border rounded ">Already Voted. ✅</div>
+        ) : (
+          <div className={"flex space-x-2 text-2xl"}>
+            <Button shape="circle" onClick={() => handleOnVote(true)}>
+              👍
+            </Button>
+            <Button shape="circle" onClick={() => handleOnVote(false)}>
+              👎
+            </Button>
+          </div>
+        )}
       </div>
       <p className={"text-gray-700 mt-4"}>{proposal.description}</p>
+      <div className={"px-8"}>
+        <Progress
+          percent={voteCount ? 100 : 0}
+          success={{ percent: (voteYes / voteCount) * 100 }}
+          status={"active"}
+        />
+        <div className="flex justify-between">
+          <div>{voteYes}</div>
+          <div>{voteNo}</div>
+        </div>
+      </div>
     </div>
   );
 };

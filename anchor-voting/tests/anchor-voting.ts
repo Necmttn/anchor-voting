@@ -73,7 +73,7 @@ describe("anchor-voting", () => {
       },
       {
         name: "Error",
-        message: "302: You have already voted return for this proposal",
+        message: "301: You have already voted for this proposal",
       }
     );
   });

@@ -1,43 +1,129 @@
 {
-    "version": "0.0.0",
-    "name": "anchor_voting",
-    "instructions": [
-      {
-        "name": "initializeVoting",
-        "accounts": [
+  "version": "0.0.0",
+  "name": "anchor_voting",
+  "instructions": [
+    {
+      "name": "initializeVoting",
+      "accounts": [
+        {
+          "name": "baseAccount",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "addProposal",
+      "accounts": [
+        {
+          "name": "baseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "voteForProposal",
+      "accounts": [
+        {
+          "name": "baseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "index",
+          "type": "u64"
+        },
+        {
+          "name": "vote",
+          "type": "bool"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "BaseAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            "name": "baseAccount",
-            "isMut": true,
-            "isSigner": true
+            "name": "totalProposalCount",
+            "type": "u64"
           },
           {
-            "name": "user",
-            "isMut": true,
-            "isSigner": true
-          },
-          {
-            "name": "systemProgram",
-            "isMut": false,
-            "isSigner": false
+            "name": "proposalList",
+            "type": {
+              "vec": {
+                "defined": "Proposal"
+              }
+            }
           }
-        ],
-        "args": []
-      },
-      {
-        "name": "addProposal",
-        "accounts": [
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "UserVote",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            "name": "baseAccount",
-            "isMut": true,
-            "isSigner": false
+            "name": "owner",
+            "type": "publicKey"
           },
           {
-            "name": "user",
-            "isMut": true,
-            "isSigner": true
+            "name": "vote",
+            "type": {
+              "defined": "Vote"
+            }
           }
-        ],
-        "args": [
+        ]
+      }
+    },
+    {
+      "name": "Proposal",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "id",
+            "type": "u64"
+          },
           {
             "name": "title",
             "type": "string"
@@ -45,87 +131,61 @@
           {
             "name": "description",
             "type": "string"
+          },
+          {
+            "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "votedUsers",
+            "type": {
+              "vec": "publicKey"
+            }
+          },
+          {
+            "name": "voteCount",
+            "type": "u64"
+          },
+          {
+            "name": "vote",
+            "type": "i64"
           }
         ]
       }
-    ],
-    "accounts": [
-      {
-        "name": "BaseAccount",
-        "type": {
-          "kind": "struct",
-          "fields": [
-            {
-              "name": "totalProposalCount",
-              "type": "u64"
-            },
-            {
-              "name": "proposalList",
-              "type": {
-                "vec": {
-                  "defined": "Proposal"
-                }
-              }
-            }
-          ]
-        }
+    },
+    {
+      "name": "Vote",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Down"
+          },
+          {
+            "name": "Up"
+          }
+        ]
       }
-    ],
-    "types": [
-      {
-        "name": "Vote",
-        "type": {
-          "kind": "struct",
-          "fields": [
-            {
-              "name": "proposalId",
-              "type": "u64"
-            },
-            {
-              "name": "voterId",
-              "type": "publicKey"
-            },
-            {
-              "name": "vote",
-              "type": "bool"
-            }
-          ]
-        }
-      },
-      {
-        "name": "Proposal",
-        "type": {
-          "kind": "struct",
-          "fields": [
-            {
-              "name": "id",
-              "type": "u64"
-            },
-            {
-              "name": "title",
-              "type": "string"
-            },
-            {
-              "name": "description",
-              "type": "string"
-            },
-            {
-              "name": "owner",
-              "type": "publicKey"
-            },
-            {
-              "name": "votes",
-              "type": {
-                "vec": {
-                  "defined": "Vote"
-                }
-              }
-            }
-          ]
-        }
-      }
-    ],
-    "metadata": {
-      "address": "HRNkDCeaArkBn2mM3pMa1JwAMmgaNgWpXnPYeNq5eFvg"
     }
+  ],
+  "errors": [
+    {
+      "code": 300,
+      "name": "ProposalIndexOutOfBounds",
+      "msg": "No Proposal at this index"
+    },
+    {
+      "code": 301,
+      "name": "YouCannotVoteForYourOwnProposal",
+      "msg": "You can not vote for your own proposal"
+    },
+    {
+      "code": 302,
+      "name": "YouAlreadyVotedForThisProposal",
+      "msg": "You have already voted return for this proposal"
+    }
+  ],
+  "metadata": {
+    "address": "HRNkDCeaArkBn2mM3pMa1JwAMmgaNgWpXnPYeNq5eFvg"
   }
+}
