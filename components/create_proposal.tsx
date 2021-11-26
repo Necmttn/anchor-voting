@@ -37,6 +37,7 @@ export const CreateProposalModal = () => {
         title: "",
         description: "",
       });
+      setVisible(false);
     } catch (err) {
       message.error(err?.message);
     } finally {

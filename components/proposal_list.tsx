@@ -1,23 +1,36 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { getProposalList, useBaseAccount, voteForProposal } from "../solana";
+import {
+  createBaseAccountForProposals,
+  useBaseAccount,
+  voteForProposal,
+} from "../solana";
 import { Button, Progress } from "antd";
 import { IdlTypes } from "@project-serum/anchor";
 import { AnchorVoting } from "../anchor-voting/target/types/anchor_voting";
 
 export const ProposalList = () => {
-  const { baseAccount } = useBaseAccount();
+  const { baseAccount, isError } = useBaseAccount();
   const proposals =
     (baseAccount?.proposalList as IdlTypes<AnchorVoting>["Proposal"][]) || [];
+  console.log(isError);
   return (
     <div className={"w-full flex flex-col py-8 h-full "}>
       <h1>Proposal List</h1>
       {baseAccount?.totalProposalCount.toNumber()}
-      <div className={"flex flex-col space-y-4 p-2"}>
-        {proposals.reverse().map((p) => (
-          <ProposalItem key={`proposal_${p?.id.toNumber()}`} proposal={p} />
-        ))}
-      </div>
+      {!baseAccount ? (
+        <div>
+          <Button onClick={() => createBaseAccountForProposals()}>
+            Deploy Base Account
+          </Button>
+        </div>
+      ) : (
+        <div className={"flex flex-col space-y-4 p-2"}>
+          {proposals.reverse().map((p) => (
+            <ProposalItem key={`proposal_${p?.id.toNumber()}`} proposal={p} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

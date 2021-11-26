@@ -1,4 +1,4 @@
-import { useProposalList } from './index';
+import { useProposalList } from "./index";
 import { ProposalList } from "./../components/proposal_list";
 import { message } from "antd";
 import { Program, Provider, web3, BN } from "@project-serum/anchor";
@@ -97,28 +97,6 @@ export const useBaseAccount = () => {
   };
 };
 
-
-export const getProposalList = async () => {
-  try {
-    const provider = getProvider();
-    const program: Program<AnchorVoting> = new Program(
-      idl as any,
-      PROGRAM_ID,
-      provider
-    );
-    const account = await program.account.baseAccount.fetch(
-      baseAccount.publicKey
-    );
-
-    console.log("Account:", account.proposalList);
-    return account.proposalList;
-  } catch (e) {
-    console.log("Error getting proposal list:", e);
-    await createBaseAccountForProposals();
-    return getProposalList();
-  }
-};
-
 export const createBaseAccountForProposals = async () => {
   try {
     const provider = getProvider();
@@ -135,10 +113,8 @@ export const createBaseAccountForProposals = async () => {
       },
       signers: [baseAccount],
     });
-
-    console.log(
-      "Created a new BaseAccount w/ address:",
-      baseAccount.publicKey.toString()
+    message.success(
+      `Created a new BaseAccount w/ address: ${baseAccount.publicKey.toString()}`
     );
   } catch (e) {
     console.error("Error creating BaseAccount account:", e);
