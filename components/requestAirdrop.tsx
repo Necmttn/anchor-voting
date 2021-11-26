@@ -35,7 +35,7 @@ export const RequestAirdrop: FC = () => {
       disabled={!publicKey}
       loading={loading}
     >
-      Request Airdrop
+      ⛽️ Request Airdrop
     </Button>
   );
 };

@@ -1,6 +1,5 @@
-import Link from "next/link";
-import { useRouter } from "next/router";
 import {
+  WalletDisconnectButton,
   WalletMultiButton,
 } from "@solana/wallet-adapter-ant-design";
 
@@ -11,26 +10,11 @@ export const Navbar = () => {
         <div className="px-2 mx-2 ">
           <span className="text-lg font-bold">ANCHOR VOTING</span>
         </div>
-        <div className={"w-40"}>
+        <div className={"flex space-x-1"}>
           <WalletMultiButton />
+          <WalletDisconnectButton />
         </div>
       </div>
     </>
-  );
-};
-
-const NavButton = ({ href, text }: { href: string; text: string }) => {
-  const { asPath } = useRouter();
-  const active = asPath === href;
-  return (
-    <Link href={href} passHref>
-      <a
-        className={`btn ${
-          active ? "btn-primary" : "btn-ghost"
-        } btn-sm rounded-btn`}
-      >
-        {text}
-      </a>
-    </Link>
   );
 };

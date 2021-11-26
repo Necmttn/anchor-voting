@@ -12,7 +12,7 @@ export const Layout: React.FC = ({ children }) => {
         <Navbar />
       </div>
       <div className={"w-full max-w-5xl"}>{children}</div>
-      <div className={"absolute bottom-0 left-0 h-16 w-16"}>
+      <div className={"absolute bottom-0 left-0 h-16 w-16 ml-2"}>
         <RequestAirdrop />
       </div>
     </main>

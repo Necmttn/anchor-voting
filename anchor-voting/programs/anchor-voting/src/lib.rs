@@ -60,7 +60,7 @@ mod anchor_voting {
 
 #[derive(Accounts)]
 pub struct InitializeVoting<'info> {
-    #[account(init, payer = user, space = 1000)]
+    #[account(init, payer = user, space = 1024 * 1_000_000)]
     pub base_account: Account<'info, BaseAccount>,
     #[account(mut)]
     pub user: Signer<'info>,
@@ -83,9 +83,6 @@ pub struct VoteForProposal<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
 }
-
-
-
 
 #[derive(Debug, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
 pub enum Vote {

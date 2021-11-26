@@ -1,12 +1,12 @@
-import { Button, Input, Modal } from "antd";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { Button, Input, message, Modal } from "antd";
 import React from "react";
-import { useSWRConfig } from "swr";
 import { createProposal } from "../solana";
 
 export const CreateProposalModal = () => {
   const [visible, setVisible] = React.useState(false);
   const [confirmLoading, setConfirmLoading] = React.useState(false);
-  const { mutate } = useSWRConfig();
+  const { connected, connect } = useWallet();
   const [campaign, setCampaign] = React.useState({
     title: "",
     description: "",
@@ -18,21 +18,30 @@ export const CreateProposalModal = () => {
     });
   };
 
-  const showModal = () => {
+  const showModal = async () => {
+    if (!connected) {
+      message.warn("Connect the wallet first !");
+      return;
+    }
     setVisible(true);
   };
 
   const handleOk = async () => {
     setConfirmLoading(true);
-    await createProposal({
-      title: campaign.title,
-      description: campaign.description,
-    });
-    mutate("/baseAccount");
-    setTimeout(() => {
-      setVisible(false);
+    try {
+      await createProposal({
+        title: campaign.title,
+        description: campaign.description,
+      });
+      setCampaign({
+        title: "",
+        description: "",
+      });
+    } catch (err) {
+      message.error(err?.message);
+    } finally {
       setConfirmLoading(false);
-    }, 2000);
+    }
   };
 
   const handleCancel = () => {
