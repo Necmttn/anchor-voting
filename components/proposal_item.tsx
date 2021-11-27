@@ -28,7 +28,7 @@ export const ProposalItem = ({
   const voteNo = proposal.voteNo.toNumber();
   return (
     <div className={"p-2 rounded shadow bg-white mb-4"}>
-      <div className={"flex justify-between bg-gray-100 p-4"}>
+      <div className={"flex justify-between bg-gray-100 p-4 shadow-inner"}>
         <div className={"flex items-center"}>
           <span className={"text-gray-700 text-2xl mr-4"}>
             #{proposal.id.toNumber()}
@@ -38,23 +38,17 @@ export const ProposalItem = ({
           </h2>
         </div>
         {hasVoted ? (
-          <div className="p-2 border rounded ">Already Voted. ✅</div>
+          <div className="p-2 bg-white border rounded">Already Voted. ✅</div>
         ) : (
           <div className={"flex space-x-2 text-2xl"}>
-            <Button shape="circle" onClick={() => handleOnVote(true)}>
-              👍
-            </Button>
             <Button shape="circle" onClick={() => handleOnVote(false)}>
               👎
             </Button>
+            <Button shape="circle" onClick={() => handleOnVote(true)}>
+              👍
+            </Button>
           </div>
         )}
-      </div>
-      <div className={"py-2 px-4"}>
-        <div className="flex">
-          <span className={"text-gray-700 font-bold"}>Proposed by:</span>
-          <WalletItem publicKey={proposal.owner} />
-        </div>
       </div>
       <div className={"px-8"}>
         <div className="flex justify-between">
@@ -89,6 +83,12 @@ export const ProposalItem = ({
           </div>
         </div>
       ) : null}
+      <div className={"py-2 px-4 mt-4"}>
+        <div className="flex space-x-4">
+          <span className={"text-gray-700 font-bold"}>Proposed by:</span>
+          <WalletItem publicKey={proposal.owner} />
+        </div>
+      </div>
     </div>
   );
 };
@@ -103,7 +103,7 @@ const WalletItem: React.FC<{ publicKey: PublicKey }> = ({ publicKey }) => {
       <div className={"w-8 h-8"}>
         <Identicon string={publicKey.toString()} size={20} />
       </div>
-      <div>{shortPublicKey}</div>
+      <div className={"font-mono  text-gray-600"}>{shortPublicKey}</div>
     </div>
   );
 };
