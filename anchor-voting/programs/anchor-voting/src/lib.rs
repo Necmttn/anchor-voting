@@ -25,7 +25,6 @@ mod anchor_voting {
             owner: *user.to_account_info().key, 
             description,
             voted_users: Vec::new(),
-            vote_count: 0,
             vote_yes: 0,
             vote_no: 0,
         };
@@ -65,7 +64,6 @@ mod anchor_voting {
         } else {
             proposal.vote_no += 1
         }
-        proposal.vote_count += 1;
         Ok(())
     }
 }
@@ -110,7 +108,6 @@ pub struct Proposal {
     pub description: String,
     pub voted_users: Vec<Pubkey>, //we wanna keep track of who voted
     pub owner: Pubkey,
-    pub vote_count: u64, // do we really need this? yes + no = vote_count
     pub vote_yes: u64,
     pub vote_no: u64, 
     // pub vote_yes: Vec<Pubkey>, if we wanna keep track of who voted yes

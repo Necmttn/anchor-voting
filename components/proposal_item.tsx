@@ -23,7 +23,6 @@ export const ProposalItem = ({
   const { publicKey } = useWallet();
   const hasVoted =
     publicKey && proposal.votedUsers.some((k) => k.equals(publicKey));
-  const voteCount = proposal.voteCount.toNumber();
   const voteYes = proposal.voteYes.toNumber();
   const voteNo = proposal.voteNo.toNumber();
   return (
@@ -62,8 +61,8 @@ export const ProposalItem = ({
           </div>
         </div>
         <Progress
-          percent={voteCount ? 100 : 0}
-          success={{ percent: (voteYes / voteCount) * 100 }}
+          percent={proposal.votedUsers.length > 0 ? 100 : 0}
+          success={{ percent: (voteYes / voteNo + voteYes) * 100 }}
           status={"active"}
         />
       </div>
@@ -73,7 +72,7 @@ export const ProposalItem = ({
           {proposal.description as string}
         </p>
       </div>
-      {proposal.voteCount.toNumber() > 0 ? (
+      {proposal.votedUsers.length > 0 ? (
         <div className={"px-4 mt-4"}>
           <h2 className={"font-bold text-lg"}>Participants:</h2>
           <div className={"shadow-inner bg-gray-50 p-2 grid grid-cols-3 gap-4"}>

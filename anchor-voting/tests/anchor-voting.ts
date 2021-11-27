@@ -58,6 +58,9 @@ describe("anchor-voting", () => {
       baseAccount.publicKey
     );
     assert.ok(account.totalProposalCount.toNumber() === 1);
+    assert.ok(account.proposalList[0].votedUsers.length === 1);
+    assert.ok(account.proposalList[0].voteYes.toNumber() === 1);
+    assert.ok(account.proposalList[0].voteNo.toNumber() === 0);
     console.log("🗳 Proposal List: ", account.proposalList);
   });
 
@@ -76,5 +79,12 @@ describe("anchor-voting", () => {
         message: "301: You have already voted for this proposal",
       }
     );
+    const account = await program.account.baseAccount.fetch(
+      baseAccount.publicKey
+    );
+    assert.ok(account.totalProposalCount.toNumber() === 1);
+    assert.ok(account.proposalList[0].votedUsers.length === 1);
+    assert.ok(account.proposalList[0].voteYes.toNumber() === 1);
+    assert.ok(account.proposalList[0].voteNo.toNumber() === 0);
   });
 });

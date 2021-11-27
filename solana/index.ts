@@ -14,7 +14,6 @@ import useSWR, { mutate } from "swr";
 export const PROGRAM_ID = new PublicKey(idl.metadata.address);
 
 const { SystemProgram } = web3;
-
 const baseAccount = web3.Keypair.fromSecretKey(
   new Uint8Array(Object.values(kp._keypair.secretKey))
 );

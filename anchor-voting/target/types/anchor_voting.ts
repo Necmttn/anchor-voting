@@ -115,18 +115,14 @@ export type AnchorVoting = {
             "type": "string"
           },
           {
-            "name": "owner",
-            "type": "publicKey"
-          },
-          {
             "name": "votedUsers",
             "type": {
               "vec": "publicKey"
             }
           },
           {
-            "name": "voteCount",
-            "type": "u64"
+            "name": "owner",
+            "type": "publicKey"
           },
           {
             "name": "voteYes",
@@ -271,18 +267,14 @@ export const IDL: AnchorVoting = {
             "type": "string"
           },
           {
-            "name": "owner",
-            "type": "publicKey"
-          },
-          {
             "name": "votedUsers",
             "type": {
               "vec": "publicKey"
             }
           },
           {
-            "name": "voteCount",
-            "type": "u64"
+            "name": "owner",
+            "type": "publicKey"
           },
           {
             "name": "voteYes",
