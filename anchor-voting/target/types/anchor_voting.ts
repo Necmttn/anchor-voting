@@ -98,24 +98,6 @@ export type AnchorVoting = {
   ],
   "types": [
     {
-      "name": "UserVote",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "owner",
-            "type": "publicKey"
-          },
-          {
-            "name": "vote",
-            "type": {
-              "defined": "Vote"
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "Proposal",
       "type": {
         "kind": "struct",
@@ -153,20 +135,6 @@ export type AnchorVoting = {
           {
             "name": "voteNo",
             "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "Vote",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Down"
-          },
-          {
-            "name": "Up"
           }
         ]
       }
@@ -286,24 +254,6 @@ export const IDL: AnchorVoting = {
   ],
   "types": [
     {
-      "name": "UserVote",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "owner",
-            "type": "publicKey"
-          },
-          {
-            "name": "vote",
-            "type": {
-              "defined": "Vote"
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "Proposal",
       "type": {
         "kind": "struct",
@@ -341,20 +291,6 @@ export const IDL: AnchorVoting = {
           {
             "name": "voteNo",
             "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "Vote",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Down"
-          },
-          {
-            "name": "Up"
           }
         ]
       }

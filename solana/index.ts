@@ -43,6 +43,7 @@ export const createProposal = async (proposal: {
       user: provider.wallet.publicKey,
     },
   });
+  // refetch the base account
   mutate("/baseAccount");
 };
 
@@ -57,6 +58,7 @@ export const voteForProposal = async (id: BN, vote: boolean) => {
         user: provider.wallet.publicKey,
       },
     });
+    // refetch the base account
     mutate("/baseAccount");
     message.success("Voted");
   } catch (err) {
@@ -114,6 +116,8 @@ export const createBaseAccountForProposals = async () => {
     message.success(
       `Created a new BaseAccount w/ address: ${baseAccount.publicKey.toString()}`
     );
+    // refetch the base account
+    mutate("/baseAccount");
   } catch (e) {
     console.error("Error creating BaseAccount account:", e);
   }

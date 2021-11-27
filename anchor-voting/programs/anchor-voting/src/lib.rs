@@ -6,13 +6,15 @@ declare_id!("HRNkDCeaArkBn2mM3pMa1JwAMmgaNgWpXnPYeNq5eFvg");
 mod anchor_voting {
 
     use super::*;
-    
+   
+    // setup base account for anchor voting
     pub fn initialize_voting(ctx: Context<InitializeVoting>) -> ProgramResult {
         let base_account = &mut ctx.accounts.base_account;
         base_account.total_proposal_count = 0;
         Ok(())
     }
 
+    // create a new proposal
     pub fn add_proposal(ctx: Context<AddProposal>, title: String, description: String) -> ProgramResult {
         let base_account = &mut ctx.accounts.base_account;
         let user = &mut ctx.accounts.user;
@@ -20,7 +22,7 @@ mod anchor_voting {
         let proposal = Proposal {
             id: base_account.total_proposal_count,
             title,
-            owner: *user.to_account_info().key,
+            owner: *user.to_account_info().key, 
             description,
             voted_users: Vec::new(),
             vote_count: 0,
@@ -28,38 +30,48 @@ mod anchor_voting {
             vote_no: 0,
         };
 
+        // add proposal to base account proposals
         base_account.proposal_list.push(proposal);
+        // increment total proposal count
         base_account.total_proposal_count += 1;
         Ok(())
     }
 
+    // vote on a proposal
     pub fn vote_for_proposal(ctx: Context<VoteForProposal>, index: u64, vote: bool ) -> ProgramResult {
         let base_account = &mut ctx.accounts.base_account;
         let user = &mut ctx.accounts.user;
+        // get proposal 
         let proposal =  base_account.proposal_list.get_mut(index as usize);
+        // check if proposal exists
         if let None = proposal {
+            // return error if proposal does not exist
             return Err(ErrorCode::ProposalIndexOutOfBounds.into());
         }
+        // unwrap proposal so we can access it
         let proposal = proposal.unwrap();
 
+        // check if user has already voted on this proposal
         if proposal.voted_users.contains(&*user.to_account_info().key) {
+            // return error if user has already voted on this proposal
             return Err(ErrorCode::YouAlreadyVotedForThisProposal.into());
         }
 
+        // add user to voted users.
         proposal.voted_users.push(*user.to_account_info().key);
+        // corespoing vote count base on `vote`
         if vote {
             proposal.vote_yes += 1
         } else {
             proposal.vote_no += 1
         }
         proposal.vote_count += 1;
-
         Ok(())
     }
 }
-
 #[derive(Accounts)]
 pub struct InitializeVoting<'info> {
+    // base account which holds all proposals 
     #[account(init, payer = user, space = 10240)]
     pub base_account: Account<'info, BaseAccount>,
     #[account(mut)]
@@ -91,7 +103,7 @@ pub struct BaseAccount {
     pub proposal_list: Vec<Proposal>,
 }
 
-#[account]
+#[derive(Debug,  Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct Proposal {
     pub id: u64,
     pub title: String,
