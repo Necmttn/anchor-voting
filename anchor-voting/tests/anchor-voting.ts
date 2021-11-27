@@ -58,8 +58,9 @@ describe("anchor-voting", () => {
       baseAccount.publicKey
     );
     assert.ok(account.totalProposalCount.toNumber() === 1);
-    const firstProposal = account
-      .proposalList[0] as IdlTypes<AnchorVoting>["Proposal"];
+    const firstProposal = (
+      account.proposalList as IdlTypes<AnchorVoting>["Proposal"][]
+    )[0];
     assert.ok(firstProposal.votedUsers.length === 1);
     assert.ok(firstProposal.voteYes.toNumber() === 1);
     assert.ok(firstProposal.voteNo.toNumber() === 0);
@@ -85,8 +86,9 @@ describe("anchor-voting", () => {
       baseAccount.publicKey
     );
     assert.ok(account.totalProposalCount.toNumber() === 1);
-    const firstProposal = account
-      .proposalList[0] as IdlTypes<AnchorVoting>["Proposal"];
+    const firstProposal = (
+      account.proposalList as IdlTypes<AnchorVoting>["Proposal"][]
+    )[0];
     assert.ok(firstProposal.votedUsers.length === 1);
     assert.ok(firstProposal.voteYes.toNumber() === 1);
     assert.ok(firstProposal.voteNo.toNumber() === 0);
