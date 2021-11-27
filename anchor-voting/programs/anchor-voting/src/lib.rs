@@ -84,12 +84,6 @@ pub struct VoteForProposal<'info> {
     pub user: Signer<'info>,
 }
 
-#[derive(Debug, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
-pub enum Vote {
-  Down = -1,
-  Up   =  1,
-}
-
 // Tell Solana what we want to store on this account.
 #[account]
 pub struct BaseAccount {
@@ -97,14 +91,7 @@ pub struct BaseAccount {
     pub proposal_list: Vec<Proposal>,
 }
 
-
-#[derive(Debug,  Clone, AnchorSerialize, AnchorDeserialize)]
-pub struct UserVote {
-    pub owner: Pubkey,
-    pub vote: Vote,
-}
-
-#[derive(Debug,  Clone, AnchorSerialize, AnchorDeserialize)]
+#[account]
 pub struct Proposal {
     pub id: u64,
     pub title: String,

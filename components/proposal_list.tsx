@@ -72,7 +72,7 @@ const ProposalItem = ({
           </div>
         )}
       </div>
-      <p className={"text-gray-700 mt-4"}>{proposal.description}</p>
+      <p className={"text-gray-700 mt-4"}>{proposal.description as string}</p>
       <div className={"px-8"}>
         <Progress
           percent={voteCount ? 100 : 0}

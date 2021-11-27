@@ -1,9 +1,8 @@
-import { useProposalList } from "./index";
-import { ProposalList } from "./../components/proposal_list";
 import { message } from "antd";
 import { Program, Provider, web3, BN } from "@project-serum/anchor";
 import {
   clusterApiUrl,
+  Commitment,
   Connection,
   ConnectionConfig,
   PublicKey,
@@ -21,7 +20,7 @@ const baseAccount = web3.Keypair.fromSecretKey(
   new Uint8Array(Object.values(kp._keypair.secretKey))
 );
 
-const opts: ConnectionConfig = {
+const opts: { commitment: Commitment } = {
   commitment: "processed",
 };
 
@@ -29,7 +28,7 @@ const getProvider = () => {
   // Set our network to devnet.
   const network = clusterApiUrl("devnet");
   const connection = new Connection(network, opts.commitment);
-  const provider = new Provider(connection, window?.solana, opts.commitment);
+  const provider = new Provider(connection, (window as any)?.solana, opts);
   return provider;
 };
 
@@ -61,8 +60,8 @@ export const voteForProposal = async (id: BN, vote: boolean) => {
     });
     mutate("/baseAccount");
     message.success("Voted");
-  } catch (err: Error) {
-    message.error(err?.message);
+  } catch (err) {
+    message.error((err as Error)?.message);
   } finally {
     setTimeout(hide, 100);
   }
@@ -78,7 +77,7 @@ const getProgram = (): Program<AnchorVoting> => {
   return program;
 };
 
-const programFetcher = async (...args) => {
+const programFetcher = async (...args: any[]) => {
   const provider = getProvider();
   const program: Program<AnchorVoting> = new Program(
     idl as any,

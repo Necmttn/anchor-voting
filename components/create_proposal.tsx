@@ -39,7 +39,7 @@ export const CreateProposalModal = () => {
       });
       setVisible(false);
     } catch (err) {
-      message.error(err?.message);
+      message.error((err as Error)?.message);
     } finally {
       setConfirmLoading(false);
     }
