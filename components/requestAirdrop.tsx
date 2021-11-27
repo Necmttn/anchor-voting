@@ -1,6 +1,6 @@
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { LAMPORTS_PER_SOL, TransactionSignature } from "@solana/web3.js";
-import { FC, useCallback, useState } from "react";
+import React, { FC, useCallback, useEffect, useState } from "react";
 import { Button, message } from "antd";
 
 export const RequestAirdrop: FC = () => {
@@ -28,14 +28,29 @@ export const RequestAirdrop: FC = () => {
     }
   }, [publicKey, connection]);
 
+  const [balance, setBalance] = useState(0);
+  useEffect(() => {
+    if (publicKey) {
+      connection.getBalance(publicKey).then((val) => {
+        setBalance(val);
+      });
+    }
+  }, [publicKey, connection, loading]);
+
   return (
-    <Button
-      color="secondary"
-      onClick={onClick}
-      disabled={!publicKey}
-      loading={loading}
-    >
-      ⛽️ Request Airdrop
-    </Button>
+    <>
+      <div className={"text-lg font-bold inline-flex"}>
+        <span className={"text-xl"}>◎</span>{" "}
+        <span>{balance / LAMPORTS_PER_SOL}</span>
+      </div>
+      <Button
+        color="secondary"
+        onClick={onClick}
+        disabled={!publicKey}
+        loading={loading}
+      >
+        ⛽️ Request Airdrop
+      </Button>
+    </>
   );
 };
