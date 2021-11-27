@@ -6,7 +6,7 @@ declare_id!("HRNkDCeaArkBn2mM3pMa1JwAMmgaNgWpXnPYeNq5eFvg");
 mod anchor_voting {
 
     use super::*;
-   
+
     // setup base account for anchor voting
     pub fn initialize_voting(ctx: Context<InitializeVoting>) -> ProgramResult {
         let base_account = &mut ctx.accounts.base_account;
@@ -15,15 +15,21 @@ mod anchor_voting {
     }
 
     // create a new proposal
-    pub fn add_proposal(ctx: Context<AddProposal>, proposal_account_bump: u8, proposal_id: u64, title: String, description: String) -> ProgramResult {
+    pub fn add_proposal(
+        ctx: Context<AddProposal>,
+        proposal_account_bump: u8,
+        proposal_id: u64,
+        title: String,
+        description: String,
+    ) -> ProgramResult {
         let base_account = &mut ctx.accounts.base_account;
         let proposal_account = &mut ctx.accounts.proposal_account;
         let user = &mut ctx.accounts.user;
-        
+
         let proposal = Proposal {
             id: proposal_id,
             title,
-            owner: *user.to_account_info().key, 
+            owner: *user.to_account_info().key,
             description,
             voted_users: Vec::new(),
             vote_yes: 0,
@@ -34,19 +40,25 @@ mod anchor_voting {
         proposal_account.proposal = proposal;
 
         // add proposal to base account proposals
-        base_account.proposal_list.push(proposal_account.to_account_info().key.clone());
+        base_account
+            .proposal_list
+            .push(proposal_account.to_account_info().key.clone());
         // increment total proposal count
         base_account.total_proposal_count += 1;
         Ok(())
     }
 
     // vote on a proposal
-    pub fn vote_for_proposal(ctx: Context<VoteForProposal>, proposal_id: u64, vote: bool ) -> ProgramResult {
+    pub fn vote_for_proposal(
+        ctx: Context<VoteForProposal>,
+        proposal_id: u64,
+        vote: bool,
+    ) -> ProgramResult {
         let base_account = &mut ctx.accounts.base_account;
         let proposal_account = &mut ctx.accounts.proposal_account;
         let user = &mut ctx.accounts.user;
-        // get proposal 
-        let proposal =  base_account.proposal_list.get_mut(proposal_id as usize);
+        // get proposal
+        let proposal = base_account.proposal_list.get_mut(proposal_id as usize);
         // check if proposal exists
         if let None = proposal {
             // return error if proposal does not exist
@@ -55,13 +67,20 @@ mod anchor_voting {
         // unwrap proposal so we can access it
 
         // check if user has already voted on this proposal
-        if proposal_account.proposal.voted_users.contains(&*user.to_account_info().key) {
+        if proposal_account
+            .proposal
+            .voted_users
+            .contains(&*user.to_account_info().key)
+        {
             // return error if user has already voted on this proposal
             return Err(ErrorCode::YouAlreadyVotedForThisProposal.into());
         }
 
         // add user to voted users.
-        proposal_account.proposal.voted_users.push(*user.to_account_info().key);
+        proposal_account
+            .proposal
+            .voted_users
+            .push(*user.to_account_info().key);
         // corespoing vote count base on `vote`
         if vote {
             proposal_account.proposal.vote_yes += 1
@@ -73,28 +92,27 @@ mod anchor_voting {
 }
 #[derive(Accounts)]
 pub struct InitializeVoting<'info> {
-    // base account which holds all proposals 
+    // base account which holds all proposals
     #[account(init, payer = user, space = 10240)]
     pub base_account: Account<'info, BaseAccount>,
     #[account(mut)]
     pub user: Signer<'info>,
-    pub system_program: Program <'info, System>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
 #[instruction(proposal_account_bump: u8, proposal_id: u64)]
 pub struct AddProposal<'info> {
     #[account(mut)]
-    pub base_account: Account<'info, BaseAccount>, 
+    pub base_account: Account<'info, BaseAccount>,
 
-    #[account(init, seeds = [b"proposal_account".as_ref(), proposal_id.to_be_bytes().as_ref()], bump = proposal_account_bump, payer = user, space = 10240)]
+    #[account(init, seeds = [b"proposal_account".as_ref(), proposal_id.to_le_bytes().as_ref()], bump = {msg!("bump be {}", proposal_account_bump); proposal_account_bump}, payer = user, space = 10240)]
     pub proposal_account: Account<'info, ProposalAccount>,
 
     #[account(mut)]
     pub user: Signer<'info>,
-    pub system_program: Program <'info, System>,
+    pub system_program: Program<'info, System>,
 }
-
 
 #[derive(Accounts)]
 #[instruction(proposal_account_bump: u8, proposal_id: u64)]
@@ -120,7 +138,7 @@ pub struct BaseAccount {
     pub proposal_list: Vec<Pubkey>,
 }
 
-#[derive(Debug,  Clone, AnchorSerialize, AnchorDeserialize)]
+#[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct Proposal {
     pub id: u64, // unique id for each proposal
     pub title: String,
@@ -128,10 +146,9 @@ pub struct Proposal {
     pub voted_users: Vec<Pubkey>, //we wanna keep track of who voted
     pub owner: Pubkey,
     pub vote_yes: u64,
-    pub vote_no: u64, 
+    pub vote_no: u64,
     // pub vote_yes: Vec<Pubkey>, if we wanna keep track of who voted yes
-    // pub vote_no: Vec<Pubkey>, if we wanna keep track of who voted no 
-
+    // pub vote_no: Vec<Pubkey>, if we wanna keep track of who voted no
 }
 
 #[error]
