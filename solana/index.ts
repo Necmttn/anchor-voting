@@ -4,11 +4,10 @@ import {
   clusterApiUrl,
   Commitment,
   Connection,
-  ConnectionConfig,
   PublicKey,
 } from "@solana/web3.js";
 import { AnchorVoting } from "../anchor-voting/target/types/anchor_voting";
-import idl from "../anchor-voting/target/idl/anchor_voting.json";
+import idl from "./idl.json";
 import kp from "../keypair.json";
 import useSWR, { mutate } from "swr";
 
