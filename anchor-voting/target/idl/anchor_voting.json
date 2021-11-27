@@ -87,6 +87,10 @@
       ],
       "args": [
         {
+          "name": "proposalAccountBump",
+          "type": "u8"
+        },
+        {
           "name": "proposalId",
           "type": "u64"
         },

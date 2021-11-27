@@ -1,7 +1,6 @@
-import { useBaseAccount } from "./../../solana/index";
 import { AnchorVoting } from "./../target/types/anchor_voting";
 import * as anchor from "@project-serum/anchor";
-import { IdlTypes, Program } from "@project-serum/anchor";
+import { Program } from "@project-serum/anchor";
 import { SystemProgram } from "@solana/web3.js";
 import assert from "assert";
 
@@ -15,9 +14,9 @@ describe("anchor-voting", () => {
   // The Account to create.
   const baseAccount = anchor.web3.Keypair.generate();
 
-  const getProposalIdBuffer = (total: anchor.BN) => {
+  const getProposalIdBuffer = (total: number) => {
     const totalProposalAccountBuf = Buffer.alloc(8);
-    totalProposalAccountBuf.writeUIntLE(total.toNumber(), 0, 6);
+    totalProposalAccountBuf.writeUIntLE(total, 0, 6);
     return totalProposalAccountBuf;
   };
 
@@ -44,7 +43,9 @@ describe("anchor-voting", () => {
       baseAccount.publicKey
     );
     console.log("Your account", account);
-    const proposalId = getProposalIdBuffer(account.totalProposalCount);
+    const proposalId = getProposalIdBuffer(
+      account.totalProposalCount.toNumber()
+    );
     const [proposalAccountPublicKey, accountBump] =
       await anchor.web3.PublicKey.findProgramAddress(
         [Buffer.from("proposal_account"), proposalId],
@@ -73,7 +74,9 @@ describe("anchor-voting", () => {
     account = await program.account.baseAccount.fetch(baseAccount.publicKey);
     console.log("Your account", account);
 
-    const secondProposalId = getProposalIdBuffer(account.totalProposalCount);
+    const secondProposalId = getProposalIdBuffer(
+      account.totalProposalCount.toNumber()
+    );
     const [secondProposalAccountPublicKey, secondAccountBump] =
       await anchor.web3.PublicKey.findProgramAddress(
         [Buffer.from("proposal_account"), secondProposalId],
@@ -108,54 +111,73 @@ describe("anchor-voting", () => {
       console.log(proposalAccount);
     });
 
+    const proposals = await program.account.proposalAccount.all();
+    assert.ok(proposals.length === 2);
+
     assert.ok(account.totalProposalCount.toNumber() === 2);
     console.log("🗳 Base Account ", account);
   });
 
-  // it("Can vote for a proposal!", async () => {
-  //   await program.rpc.voteForProposal(new anchor.BN(0), true, {
-  //     accounts: {
-  //       baseAccount: baseAccount.publicKey,
-  //       user: provider.wallet.publicKey,
-  //     },
-  //   });
-  //   const account = await program.account.baseAccount.fetch(
-  //     baseAccount.publicKey
-  //   );
-  //   assert.ok(account.totalProposalCount.toNumber() === 1);
-  //   const firstProposal = (
-  //     account.proposalList as IdlTypes<AnchorVoting>["Proposal"][]
-  //   )[0];
-  //   assert.ok(firstProposal.votedUsers.length === 1);
-  //   assert.ok(firstProposal.voteYes.toNumber() === 1);
-  //   assert.ok(firstProposal.voteNo.toNumber() === 0);
-  //   console.log("🗳 Proposal List: ", account.proposalList);
-  // });
+  it("Can vote for a proposal!", async () => {
+    const proposalId = getProposalIdBuffer(0);
+    const [proposalAccountPublicKey, accountBump] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [Buffer.from("proposal_account"), proposalId],
+        anchor.workspace.AnchorVoting.programId
+      );
+    await program.rpc.voteForProposal(accountBump, new anchor.BN(0), true, {
+      accounts: {
+        baseAccount: baseAccount.publicKey,
+        proposalAccount: proposalAccountPublicKey,
+        user: provider.wallet.publicKey,
+      },
+    });
+    const account = await program.account.baseAccount.fetch(
+      baseAccount.publicKey
+    );
+    assert.ok(account.totalProposalCount.toNumber() === 2);
+    const firstProposalPubKey = account.proposalList[0];
+    const firstProposalAccount = await program.account.proposalAccount.fetch(
+      firstProposalPubKey
+    );
+    assert.ok(firstProposalAccount.proposal.votedUsers.length === 1);
+    assert.ok(firstProposalAccount.proposal.voteYes.toNumber() === 1);
+    assert.ok(firstProposalAccount.proposal.voteNo.toNumber() === 0);
+    console.log("🗳 Proposal List: ", firstProposalAccount);
+  });
 
-  // it("Can not vote for a same proposal twice!", async () => {
-  //   await assert.rejects(
-  //     async () => {
-  //       await program.rpc.voteForProposal(new anchor.BN(0), true, {
-  //         accounts: {
-  //           baseAccount: baseAccount.publicKey,
-  //           user: provider.wallet.publicKey,
-  //         },
-  //       });
-  //     },
-  //     {
-  //       name: "Error",
-  //       message: "301: You have already voted for this proposal",
-  //     }
-  //   );
-  //   const account = await program.account.baseAccount.fetch(
-  //     baseAccount.publicKey
-  //   );
-  //   assert.ok(account.totalProposalCount.toNumber() === 1);
-  //   const firstProposal = (
-  //     account.proposalList as IdlTypes<AnchorVoting>["Proposal"][]
-  //   )[0];
-  //   assert.ok(firstProposal.votedUsers.length === 1);
-  //   assert.ok(firstProposal.voteYes.toNumber() === 1);
-  //   assert.ok(firstProposal.voteNo.toNumber() === 0);
-  // });
+  it("Can not vote for a same proposal twice!", async () => {
+    await assert.rejects(
+      async () => {
+        const proposalId = getProposalIdBuffer(0);
+        const [proposalAccountPublicKey, accountBump] =
+          await anchor.web3.PublicKey.findProgramAddress(
+            [Buffer.from("proposal_account"), proposalId],
+            anchor.workspace.AnchorVoting.programId
+          );
+        await program.rpc.voteForProposal(accountBump, new anchor.BN(0), true, {
+          accounts: {
+            baseAccount: baseAccount.publicKey,
+            proposalAccount: proposalAccountPublicKey,
+            user: provider.wallet.publicKey,
+          },
+        });
+      },
+      {
+        name: "Error",
+        message: "301: You have already voted for this proposal",
+      }
+    );
+    const account = await program.account.baseAccount.fetch(
+      baseAccount.publicKey
+    );
+    const firstProposalPubKey = account.proposalList[0];
+    const firstProposalAccount = await program.account.proposalAccount.fetch(
+      firstProposalPubKey
+    );
+    assert.ok(firstProposalAccount.proposal.votedUsers.length === 1);
+    assert.ok(firstProposalAccount.proposal.voteYes.toNumber() === 1);
+    assert.ok(firstProposalAccount.proposal.voteNo.toNumber() === 0);
+    console.log("🗳 Proposal List: ", firstProposalAccount);
+  });
 });

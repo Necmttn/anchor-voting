@@ -87,6 +87,10 @@ export type AnchorVoting = {
       ],
       "args": [
         {
+          "name": "proposalAccountBump",
+          "type": "u8"
+        },
+        {
           "name": "proposalId",
           "type": "u64"
         },
@@ -277,6 +281,10 @@ export const IDL: AnchorVoting = {
         }
       ],
       "args": [
+        {
+          "name": "proposalAccountBump",
+          "type": "u8"
+        },
         {
           "name": "proposalId",
           "type": "u64"

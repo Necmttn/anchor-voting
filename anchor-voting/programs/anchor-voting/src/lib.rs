@@ -51,6 +51,7 @@ mod anchor_voting {
     // vote on a proposal
     pub fn vote_for_proposal(
         ctx: Context<VoteForProposal>,
+        _proposal_account_bump: u8,
         proposal_id: u64,
         vote: bool,
     ) -> ProgramResult {
