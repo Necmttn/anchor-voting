@@ -1,4 +1,3 @@
-import { Balance } from "./balance";
 import { Navbar } from "./navbar";
 import { RequestAirdrop } from "./requestAirdrop";
 

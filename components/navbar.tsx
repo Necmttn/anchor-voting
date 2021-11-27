@@ -10,10 +10,18 @@ export const Navbar = () => {
         <div className="px-2 mx-2 ">
           <span className="text-lg font-bold">ANCHOR VOTING</span>
         </div>
-        <div className={"flex space-x-1 text-black "}>
+        <div className={"flex space-x-1 text-black hack"}>
           <WalletMultiButton />
           <WalletDisconnectButton />
         </div>
+        <style>
+          {`
+          .hack > .ant-btn {
+            width: 170px;
+            display: flex;
+          }
+          `}
+        </style>
       </div>
     </>
   );

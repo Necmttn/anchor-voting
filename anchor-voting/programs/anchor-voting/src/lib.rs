@@ -105,14 +105,17 @@ pub struct BaseAccount {
 
 #[derive(Debug,  Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct Proposal {
-    pub id: u64,
+    pub id: u64, // unique id for each proposal
     pub title: String,
     pub description: String,
+    pub voted_users: Vec<Pubkey>, //we wanna keep track of who voted
     pub owner: Pubkey,
-    pub voted_users: Vec<Pubkey>,
-    pub vote_count: u64,
+    pub vote_count: u64, // do we really need this? yes + no = vote_count
     pub vote_yes: u64,
-    pub vote_no: u64,
+    pub vote_no: u64, 
+    // pub vote_yes: Vec<Pubkey>, if we wanna keep track of who voted yes
+    // pub vote_no: Vec<Pubkey>, if we wanna keep track of who voted no 
+
 }
 
 #[error]
