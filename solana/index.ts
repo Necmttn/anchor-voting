@@ -33,15 +33,21 @@ const getProvider = () => {
 export const createProposal = async (proposal: {
   title: string;
   description: string;
+  timeEnd: number;
 }) => {
   const provider = getProvider();
   const program = getProgram();
-  await program.rpc.addProposal(proposal.title, proposal.description, {
-    accounts: {
-      baseAccount: baseAccount.publicKey,
-      user: provider.wallet.publicKey,
-    },
-  });
+  await program.rpc.addProposal(
+    proposal.title,
+    proposal.description,
+    new BN(proposal.timeEnd),
+    {
+      accounts: {
+        baseAccount: baseAccount.publicKey,
+        user: provider.wallet.publicKey,
+      },
+    }
+  );
   // refetch the base account
   mutate("/baseAccount");
 };

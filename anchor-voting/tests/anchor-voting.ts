@@ -2,6 +2,7 @@ import * as anchor from "@project-serum/anchor";
 import { IdlTypes, Program } from "@project-serum/anchor";
 import { SystemProgram } from "@solana/web3.js";
 import assert from "assert";
+import { SSL_OP_EPHEMERAL_RSA } from "constants";
 
 import { AnchorVoting } from "../target/types/anchor_voting";
 
@@ -34,12 +35,19 @@ describe("anchor-voting", () => {
   });
 
   it("Can add a proposal!", async () => {
-    await program.rpc.addProposal("Test Title", "Test Description", {
-      accounts: {
-        baseAccount: baseAccount.publicKey,
-        user: provider.wallet.publicKey,
-      },
-    });
+    const DAY_IN_UNIX = 24 * 60 * 60 * 1000;
+    await program.rpc.addProposal(
+      "Test Title",
+      "Test Description",
+      new anchor.BN(+new Date() + 1 * DAY_IN_UNIX),
+      {
+        accounts: {
+          baseAccount: baseAccount.publicKey,
+          user: provider.wallet.publicKey,
+        },
+      }
+    );
+
     const account = await program.account.baseAccount.fetch(
       baseAccount.publicKey
     );

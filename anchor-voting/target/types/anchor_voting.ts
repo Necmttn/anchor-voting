@@ -45,6 +45,10 @@ export type AnchorVoting = {
         {
           "name": "description",
           "type": "string"
+        },
+        {
+          "name": "endTimeStamp",
+          "type": "u128"
         }
       ]
     },
@@ -131,6 +135,10 @@ export type AnchorVoting = {
           {
             "name": "voteNo",
             "type": "u64"
+          },
+          {
+            "name": "endTimeStamp",
+            "type": "u128"
           }
         ]
       }
@@ -197,6 +205,10 @@ export const IDL: AnchorVoting = {
         {
           "name": "description",
           "type": "string"
+        },
+        {
+          "name": "endTimeStamp",
+          "type": "u128"
         }
       ]
     },
@@ -283,6 +295,10 @@ export const IDL: AnchorVoting = {
           {
             "name": "voteNo",
             "type": "u64"
+          },
+          {
+            "name": "endTimeStamp",
+            "type": "u128"
           }
         ]
       }

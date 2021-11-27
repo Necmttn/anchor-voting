@@ -45,6 +45,10 @@
         {
           "name": "description",
           "type": "string"
+        },
+        {
+          "name": "endTimeStamp",
+          "type": "u128"
         }
       ]
     },
@@ -131,6 +135,10 @@
           {
             "name": "voteNo",
             "type": "u64"
+          },
+          {
+            "name": "endTimeStamp",
+            "type": "u128"
           }
         ]
       }
