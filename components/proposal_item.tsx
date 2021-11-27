@@ -62,7 +62,7 @@ export const ProposalItem = ({
         </div>
         <Progress
           percent={proposal.votedUsers.length > 0 ? 100 : 0}
-          success={{ percent: (voteYes / voteNo + voteYes) * 100 }}
+          success={{ percent: (voteNo / (voteNo + voteYes)) * 100 }}
           status={"active"}
         />
       </div>
