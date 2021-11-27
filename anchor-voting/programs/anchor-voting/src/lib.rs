@@ -17,8 +17,9 @@ mod anchor_voting {
     // create a new proposal
     pub fn add_proposal(ctx: Context<AddProposal>, title: String, description: String) -> ProgramResult {
         let base_account = &mut ctx.accounts.base_account;
+        let proposal_account = &mut ctx.accounts.proposal_account;
         let user = &mut ctx.accounts.user;
-
+        
         let proposal = Proposal {
             id: base_account.total_proposal_count,
             title,
@@ -28,6 +29,8 @@ mod anchor_voting {
             vote_yes: 0,
             vote_no: 0,
         };
+        
+        proposal_account.proposal = proposal;
 
         // add proposal to base account proposals
         base_account.proposal_list.push(proposal);
@@ -79,10 +82,13 @@ pub struct InitializeVoting<'info> {
 
 #[derive(Accounts)]
 pub struct AddProposal<'info> {
-   #[account(mut)]
-   pub base_account: Account<'info, BaseAccount>, 
-   #[account(mut)]
-   pub user: Signer<'info>,
+    #[account(mut)]
+    pub base_account: Account<'info, BaseAccount>, 
+    #[account(init, payer = user, space = 10240)]
+    pub proposal_account: Account<'info, ProposalAccount>,
+    #[account(mut)]
+    pub user: Signer<'info>,
+    pub system_program: Program <'info, System>,
 }
 
 
@@ -92,6 +98,11 @@ pub struct VoteForProposal<'info> {
     pub base_account: Account<'info, BaseAccount>,
     #[account(mut)]
     pub user: Signer<'info>,
+}
+
+#[account]
+pub struct ProposalAccount {
+    pub proposal: Proposal,
 }
 
 // Tell Solana what we want to store on this account.
