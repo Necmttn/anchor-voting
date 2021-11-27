@@ -41,12 +41,12 @@ mod anchor_voting {
     }
 
     // vote on a proposal
-    pub fn vote_for_proposal(ctx: Context<VoteForProposal>, index: u64, vote: bool ) -> ProgramResult {
+    pub fn vote_for_proposal(ctx: Context<VoteForProposal>, proposal_id: u64, vote: bool ) -> ProgramResult {
         let base_account = &mut ctx.accounts.base_account;
         let proposal_account = &mut ctx.accounts.proposal_account;
         let user = &mut ctx.accounts.user;
         // get proposal 
-        let proposal =  base_account.proposal_list.get_mut(index as usize);
+        let proposal =  base_account.proposal_list.get_mut(proposal_id as usize);
         // check if proposal exists
         if let None = proposal {
             // return error if proposal does not exist
@@ -86,8 +86,10 @@ pub struct InitializeVoting<'info> {
 pub struct AddProposal<'info> {
     #[account(mut)]
     pub base_account: Account<'info, BaseAccount>, 
+
     #[account(init, seeds = [b"proposal_account".as_ref(), proposal_id.to_be_bytes().as_ref()], bump = proposal_account_bump, payer = user, space = 10240)]
     pub proposal_account: Account<'info, ProposalAccount>,
+
     #[account(mut)]
     pub user: Signer<'info>,
     pub system_program: Program <'info, System>,
@@ -95,10 +97,11 @@ pub struct AddProposal<'info> {
 
 
 #[derive(Accounts)]
+#[instruction(proposal_account_bump: u8, proposal_id: u64)]
 pub struct VoteForProposal<'info> {
     #[account(mut)]
     pub base_account: Account<'info, BaseAccount>,
-    #[account(mut, seeds = [b"proposal_account".as_ref(), b"proposal_id".as_ref()], bump = proposal_account.bump)]
+    #[account(mut, seeds = [b"proposal_account".as_ref(), proposal_id.to_be_bytes().as_ref()], bump = proposal_account.bump)]
     pub proposal_account: Account<'info, ProposalAccount>,
     #[account(mut)]
     pub user: Signer<'info>,

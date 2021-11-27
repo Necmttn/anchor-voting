@@ -87,7 +87,7 @@
       ],
       "args": [
         {
-          "name": "index",
+          "name": "proposalId",
           "type": "u64"
         },
         {

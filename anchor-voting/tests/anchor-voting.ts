@@ -33,7 +33,7 @@ describe("anchor-voting", () => {
   });
 
   it("Can add a proposal!", async () => {
-    let account = await program.account.baseAccount.fetch(
+    const account = await program.account.baseAccount.fetch(
       baseAccount.publicKey
     );
     console.log("Your account", account);
@@ -47,8 +47,8 @@ describe("anchor-voting", () => {
         anchor.workspace.AnchorVoting.programId
       );
 
-    console.log("FIRST:", proposalAccountPublicKey, accountBump);
     console.log([
+      proposalAccountPublicKey.toString(),
       new anchor.BN(accountBump),
       account.totalProposalCount,
       "Test Title",
@@ -62,7 +62,6 @@ describe("anchor-voting", () => {
         },
       },
     ]);
-
     await program.rpc.addProposal(
       new anchor.BN(accountBump),
       account.totalProposalCount,
@@ -75,50 +74,52 @@ describe("anchor-voting", () => {
           user: provider.wallet.publicKey,
           systemProgram: SystemProgram.programId,
         },
-      }
-    );
-    account = await program.account.baseAccount.fetch(baseAccount.publicKey);
-    console.log("Your account", account);
-
-    const [secondProposalAccountPublicKey, secondAccountBump] =
-      await anchor.web3.PublicKey.findProgramAddress(
-        [
-          Buffer.from("proposal_account"),
-          account.totalProposalCount.toBuffer(),
-        ],
-        anchor.workspace.AnchorVoting.programId
-      );
-
-    console.log("SECOND:", secondProposalAccountPublicKey, secondAccountBump);
-
-    await program.rpc.addProposal(
-      secondAccountBump,
-      account.totalProposalCount,
-      "Second Test Title",
-      "Second Test Description",
-      {
-        accounts: {
-          baseAccount: baseAccount.publicKey,
-          proposalAccount: secondProposalAccountPublicKey,
-          user: provider.wallet.publicKey,
-          systemProgram: SystemProgram.programId,
-        },
+        // signers: [baseAccount],
       }
     );
 
-    account = await program.account.baseAccount.fetch(baseAccount.publicKey);
+    // account = await program.account.baseAccount.fetch(baseAccount.publicKey);
+    // console.log("Your account", account);
 
-    const proposalList = account.proposalList;
+    // const [secondProposalAccountPublicKey, secondAccountBump] =
+    //   await anchor.web3.PublicKey.findProgramAddress(
+    //     [
+    //       Buffer.from("proposal_account"),
+    //       account.totalProposalCount.toBuffer(),
+    //     ],
+    //     anchor.workspace.AnchorVoting.programId
+    //   );
 
-    proposalList.forEach(async (proposal) => {
-      const proposalAccount = await program.account.proposalAccount.fetch(
-        proposal
-      );
-      console.log(proposalAccount);
-    });
+    // console.log("SECOND:", secondProposalAccountPublicKey, secondAccountBump);
 
-    assert.ok(account.totalProposalCount.toNumber() === 2);
-    console.log("🗳 Base Account ", account);
+    // await program.rpc.addProposal(
+    //   secondAccountBump,
+    //   account.totalProposalCount,
+    //   "Second Test Title",
+    //   "Second Test Description",
+    //   {
+    //     accounts: {
+    //       baseAccount: baseAccount.publicKey,
+    //       proposalAccount: secondProposalAccountPublicKey,
+    //       user: provider.wallet.publicKey,
+    //       systemProgram: SystemProgram.programId,
+    //     },
+    //   }
+    // );
+
+    // account = await program.account.baseAccount.fetch(baseAccount.publicKey);
+
+    // const proposalList = account.proposalList;
+
+    // proposalList.forEach(async (proposal) => {
+    //   const proposalAccount = await program.account.proposalAccount.fetch(
+    //     proposal
+    //   );
+    //   console.log(proposalAccount);
+    // });
+
+    // assert.ok(account.totalProposalCount.toNumber() === 2);
+    // console.log("🗳 Base Account ", account);
   });
 
   // it("Can vote for a proposal!", async () => {

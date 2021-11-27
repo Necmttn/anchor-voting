@@ -87,7 +87,7 @@ export type AnchorVoting = {
       ],
       "args": [
         {
-          "name": "index",
+          "name": "proposalId",
           "type": "u64"
         },
         {
@@ -278,7 +278,7 @@ export const IDL: AnchorVoting = {
       ],
       "args": [
         {
-          "name": "index",
+          "name": "proposalId",
           "type": "u64"
         },
         {
