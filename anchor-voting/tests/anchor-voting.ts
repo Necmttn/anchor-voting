@@ -1,5 +1,5 @@
 import * as anchor from "@project-serum/anchor";
-import { Program } from "@project-serum/anchor";
+import { IdlTypes, Program } from "@project-serum/anchor";
 import { SystemProgram } from "@solana/web3.js";
 import assert from "assert";
 
@@ -58,9 +58,11 @@ describe("anchor-voting", () => {
       baseAccount.publicKey
     );
     assert.ok(account.totalProposalCount.toNumber() === 1);
-    assert.ok(account.proposalList[0].votedUsers.length === 1);
-    assert.ok(account.proposalList[0].voteYes.toNumber() === 1);
-    assert.ok(account.proposalList[0].voteNo.toNumber() === 0);
+    const firstProposal = account
+      .proposalList[0] as IdlTypes<AnchorVoting>["Proposal"];
+    assert.ok(firstProposal.votedUsers.length === 1);
+    assert.ok(firstProposal.voteYes.toNumber() === 1);
+    assert.ok(firstProposal.voteNo.toNumber() === 0);
     console.log("🗳 Proposal List: ", account.proposalList);
   });
 
@@ -83,8 +85,10 @@ describe("anchor-voting", () => {
       baseAccount.publicKey
     );
     assert.ok(account.totalProposalCount.toNumber() === 1);
-    assert.ok(account.proposalList[0].votedUsers.length === 1);
-    assert.ok(account.proposalList[0].voteYes.toNumber() === 1);
-    assert.ok(account.proposalList[0].voteNo.toNumber() === 0);
+    const firstProposal = account
+      .proposalList[0] as IdlTypes<AnchorVoting>["Proposal"];
+    assert.ok(firstProposal.votedUsers.length === 1);
+    assert.ok(firstProposal.voteYes.toNumber() === 1);
+    assert.ok(firstProposal.voteNo.toNumber() === 0);
   });
 });
