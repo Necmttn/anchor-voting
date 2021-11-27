@@ -15,13 +15,13 @@ mod anchor_voting {
     }
 
     // create a new proposal
-    pub fn add_proposal(ctx: Context<AddProposal>, proposal_account_bump: u8, title: String, description: String) -> ProgramResult {
+    pub fn add_proposal(ctx: Context<AddProposal>, proposal_account_bump: u8, proposal_id: u64, title: String, description: String) -> ProgramResult {
         let base_account = &mut ctx.accounts.base_account;
         let proposal_account = &mut ctx.accounts.proposal_account;
         let user = &mut ctx.accounts.user;
         
         let proposal = Proposal {
-            id: base_account.total_proposal_count,
+            id: proposal_id,
             title,
             owner: *user.to_account_info().key, 
             description,
@@ -82,11 +82,11 @@ pub struct InitializeVoting<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(proposal_account_bump: u8)]
+#[instruction(proposal_account_bump: u8, proposal_id: u64)]
 pub struct AddProposal<'info> {
     #[account(mut)]
     pub base_account: Account<'info, BaseAccount>, 
-    #[account(init, seeds = [b"proposal_account".as_ref()], bump = proposal_account_bump, payer = user, space = 10240)]
+    #[account(init, seeds = [b"proposal_account".as_ref(), proposal_id.to_be_bytes().as_ref()], bump = proposal_account_bump, payer = user, space = 10240)]
     pub proposal_account: Account<'info, ProposalAccount>,
     #[account(mut)]
     pub user: Signer<'info>,
@@ -98,7 +98,7 @@ pub struct AddProposal<'info> {
 pub struct VoteForProposal<'info> {
     #[account(mut)]
     pub base_account: Account<'info, BaseAccount>,
-    #[account(mut, seeds = [b"proposal_account".as_ref()], bump = proposal_account.bump)]
+    #[account(mut, seeds = [b"proposal_account".as_ref(), b"proposal_id".as_ref()], bump = proposal_account.bump)]
     pub proposal_account: Account<'info, ProposalAccount>,
     #[account(mut)]
     pub user: Signer<'info>,

@@ -33,16 +33,39 @@ describe("anchor-voting", () => {
   });
 
   it("Can add a proposal!", async () => {
+    let account = await program.account.baseAccount.fetch(
+      baseAccount.publicKey
+    );
+    console.log("Your account", account);
+
     const [proposalAccountPublicKey, accountBump] =
       await anchor.web3.PublicKey.findProgramAddress(
-        [Buffer.from("proposal_account")],
+        [
+          Buffer.from("proposal_account"),
+          account.totalProposalCount.toBuffer(),
+        ],
         anchor.workspace.AnchorVoting.programId
       );
 
-    console.log(proposalAccountPublicKey, accountBump);
+    console.log("FIRST:", proposalAccountPublicKey, accountBump);
+    console.log([
+      new anchor.BN(accountBump),
+      account.totalProposalCount,
+      "Test Title",
+      "Test Description",
+      {
+        accounts: {
+          baseAccount: baseAccount.publicKey,
+          proposalAccount: proposalAccountPublicKey,
+          user: provider.wallet.publicKey,
+          systemProgram: SystemProgram.programId,
+        },
+      },
+    ]);
 
     await program.rpc.addProposal(
-      accountBump,
+      new anchor.BN(accountBump),
+      account.totalProposalCount,
       "Test Title",
       "Test Description",
       {
@@ -54,17 +77,23 @@ describe("anchor-voting", () => {
         },
       }
     );
+    account = await program.account.baseAccount.fetch(baseAccount.publicKey);
+    console.log("Your account", account);
 
     const [secondProposalAccountPublicKey, secondAccountBump] =
       await anchor.web3.PublicKey.findProgramAddress(
-        [Buffer.from("proposal_account")],
+        [
+          Buffer.from("proposal_account"),
+          account.totalProposalCount.toBuffer(),
+        ],
         anchor.workspace.AnchorVoting.programId
       );
 
-    console.log(secondProposalAccountPublicKey, secondAccountBump);
+    console.log("SECOND:", secondProposalAccountPublicKey, secondAccountBump);
 
     await program.rpc.addProposal(
       secondAccountBump,
+      account.totalProposalCount,
       "Second Test Title",
       "Second Test Description",
       {
@@ -77,9 +106,7 @@ describe("anchor-voting", () => {
       }
     );
 
-    const account = await program.account.baseAccount.fetch(
-      baseAccount.publicKey
-    );
+    account = await program.account.baseAccount.fetch(baseAccount.publicKey);
 
     const proposalList = account.proposalList;
 

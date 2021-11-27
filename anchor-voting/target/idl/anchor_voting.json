@@ -53,6 +53,10 @@
           "type": "u8"
         },
         {
+          "name": "proposalId",
+          "type": "u64"
+        },
+        {
           "name": "title",
           "type": "string"
         },
