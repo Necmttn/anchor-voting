@@ -15,7 +15,7 @@ mod anchor_voting {
     }
 
     // create a new proposal
-    pub fn add_proposal(ctx: Context<AddProposal>, title: String, description: String) -> ProgramResult {
+    pub fn add_proposal(ctx: Context<AddProposal>, proposal_account_bump: u8, title: String, description: String) -> ProgramResult {
         let base_account = &mut ctx.accounts.base_account;
         let proposal_account = &mut ctx.accounts.proposal_account;
         let user = &mut ctx.accounts.user;
@@ -29,11 +29,12 @@ mod anchor_voting {
             vote_yes: 0,
             vote_no: 0,
         };
-        
+
+        proposal_account.bump = proposal_account_bump;
         proposal_account.proposal = proposal;
 
         // add proposal to base account proposals
-        base_account.proposal_list.push(proposal);
+        base_account.proposal_list.push(proposal_account.to_account_info().key.clone());
         // increment total proposal count
         base_account.total_proposal_count += 1;
         Ok(())
@@ -42,6 +43,7 @@ mod anchor_voting {
     // vote on a proposal
     pub fn vote_for_proposal(ctx: Context<VoteForProposal>, index: u64, vote: bool ) -> ProgramResult {
         let base_account = &mut ctx.accounts.base_account;
+        let proposal_account = &mut ctx.accounts.proposal_account;
         let user = &mut ctx.accounts.user;
         // get proposal 
         let proposal =  base_account.proposal_list.get_mut(index as usize);
@@ -51,21 +53,20 @@ mod anchor_voting {
             return Err(ErrorCode::ProposalIndexOutOfBounds.into());
         }
         // unwrap proposal so we can access it
-        let proposal = proposal.unwrap();
 
         // check if user has already voted on this proposal
-        if proposal.voted_users.contains(&*user.to_account_info().key) {
+        if proposal_account.proposal.voted_users.contains(&*user.to_account_info().key) {
             // return error if user has already voted on this proposal
             return Err(ErrorCode::YouAlreadyVotedForThisProposal.into());
         }
 
         // add user to voted users.
-        proposal.voted_users.push(*user.to_account_info().key);
+        proposal_account.proposal.voted_users.push(*user.to_account_info().key);
         // corespoing vote count base on `vote`
         if vote {
-            proposal.vote_yes += 1
+            proposal_account.proposal.vote_yes += 1
         } else {
-            proposal.vote_no += 1
+            proposal_account.proposal.vote_no += 1
         }
         Ok(())
     }
@@ -81,10 +82,11 @@ pub struct InitializeVoting<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(proposal_account_bump: u8)]
 pub struct AddProposal<'info> {
     #[account(mut)]
     pub base_account: Account<'info, BaseAccount>, 
-    #[account(init, payer = user, space = 10240)]
+    #[account(init, seeds = [b"proposal_account".as_ref()], bump = proposal_account_bump, payer = user, space = 10240)]
     pub proposal_account: Account<'info, ProposalAccount>,
     #[account(mut)]
     pub user: Signer<'info>,
@@ -96,6 +98,8 @@ pub struct AddProposal<'info> {
 pub struct VoteForProposal<'info> {
     #[account(mut)]
     pub base_account: Account<'info, BaseAccount>,
+    #[account(mut, seeds = [b"proposal_account".as_ref()], bump = proposal_account.bump)]
+    pub proposal_account: Account<'info, ProposalAccount>,
     #[account(mut)]
     pub user: Signer<'info>,
 }
@@ -103,13 +107,14 @@ pub struct VoteForProposal<'info> {
 #[account]
 pub struct ProposalAccount {
     pub proposal: Proposal,
+    pub bump: u8,
 }
 
 // Tell Solana what we want to store on this account.
 #[account]
 pub struct BaseAccount {
     pub total_proposal_count: u64,
-    pub proposal_list: Vec<Proposal>,
+    pub proposal_list: Vec<Pubkey>,
 }
 
 #[derive(Debug,  Clone, AnchorSerialize, AnchorDeserialize)]

@@ -32,12 +32,26 @@ export type AnchorVoting = {
           "isSigner": false
         },
         {
+          "name": "proposalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "user",
           "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
+        {
+          "name": "proposalAccountBump",
+          "type": "u8"
+        },
         {
           "name": "title",
           "type": "string"
@@ -53,6 +67,11 @@ export type AnchorVoting = {
       "accounts": [
         {
           "name": "baseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "proposalAccount",
           "isMut": true,
           "isSigner": false
         },
@@ -76,6 +95,24 @@ export type AnchorVoting = {
   ],
   "accounts": [
     {
+      "name": "proposalAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "proposal",
+            "type": {
+              "defined": "Proposal"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "baseAccount",
       "type": {
         "kind": "struct",
@@ -87,9 +124,7 @@ export type AnchorVoting = {
           {
             "name": "proposalList",
             "type": {
-              "vec": {
-                "defined": "Proposal"
-              }
+              "vec": "publicKey"
             }
           }
         ]
@@ -184,12 +219,26 @@ export const IDL: AnchorVoting = {
           "isSigner": false
         },
         {
+          "name": "proposalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "user",
           "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
+        {
+          "name": "proposalAccountBump",
+          "type": "u8"
+        },
         {
           "name": "title",
           "type": "string"
@@ -205,6 +254,11 @@ export const IDL: AnchorVoting = {
       "accounts": [
         {
           "name": "baseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "proposalAccount",
           "isMut": true,
           "isSigner": false
         },
@@ -228,6 +282,24 @@ export const IDL: AnchorVoting = {
   ],
   "accounts": [
     {
+      "name": "proposalAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "proposal",
+            "type": {
+              "defined": "Proposal"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "baseAccount",
       "type": {
         "kind": "struct",
@@ -239,9 +311,7 @@ export const IDL: AnchorVoting = {
           {
             "name": "proposalList",
             "type": {
-              "vec": {
-                "defined": "Proposal"
-              }
+              "vec": "publicKey"
             }
           }
         ]

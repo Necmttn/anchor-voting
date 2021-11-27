@@ -1,9 +1,8 @@
+import { AnchorVoting } from "./../target/types/anchor_voting";
 import * as anchor from "@project-serum/anchor";
 import { IdlTypes, Program } from "@project-serum/anchor";
 import { SystemProgram } from "@solana/web3.js";
 import assert from "assert";
-
-import { AnchorVoting } from "../target/types/anchor_voting";
 
 describe("anchor-voting", () => {
   // Configure the client to use the local cluster.
@@ -34,63 +33,111 @@ describe("anchor-voting", () => {
   });
 
   it("Can add a proposal!", async () => {
-    await program.rpc.addProposal("Test Title", "Test Description", {
-      accounts: {
-        baseAccount: baseAccount.publicKey,
-        user: provider.wallet.publicKey,
-      },
-    });
-    const account = await program.account.baseAccount.fetch(
-      baseAccount.publicKey
-    );
-    assert.ok(account.totalProposalCount.toNumber() === 1);
-    console.log("🗳 Proposal List: ", account.proposalList);
-  });
+    const [proposalAccountPublicKey, accountBump] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [Buffer.from("proposal_account")],
+        anchor.workspace.AnchorVoting.programId
+      );
 
-  it("Can vote for a proposal!", async () => {
-    await program.rpc.voteForProposal(new anchor.BN(0), true, {
-      accounts: {
-        baseAccount: baseAccount.publicKey,
-        user: provider.wallet.publicKey,
-      },
-    });
-    const account = await program.account.baseAccount.fetch(
-      baseAccount.publicKey
-    );
-    assert.ok(account.totalProposalCount.toNumber() === 1);
-    const firstProposal = (
-      account.proposalList as IdlTypes<AnchorVoting>["Proposal"][]
-    )[0];
-    assert.ok(firstProposal.votedUsers.length === 1);
-    assert.ok(firstProposal.voteYes.toNumber() === 1);
-    assert.ok(firstProposal.voteNo.toNumber() === 0);
-    console.log("🗳 Proposal List: ", account.proposalList);
-  });
+    console.log(proposalAccountPublicKey, accountBump);
 
-  it("Can not vote for a same proposal twice!", async () => {
-    await assert.rejects(
-      async () => {
-        await program.rpc.voteForProposal(new anchor.BN(0), true, {
-          accounts: {
-            baseAccount: baseAccount.publicKey,
-            user: provider.wallet.publicKey,
-          },
-        });
-      },
+    await program.rpc.addProposal(
+      accountBump,
+      "Test Title",
+      "Test Description",
       {
-        name: "Error",
-        message: "301: You have already voted for this proposal",
+        accounts: {
+          baseAccount: baseAccount.publicKey,
+          proposalAccount: proposalAccountPublicKey,
+          user: provider.wallet.publicKey,
+          systemProgram: SystemProgram.programId,
+        },
       }
     );
+
+    const [secondProposalAccountPublicKey, secondAccountBump] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [Buffer.from("proposal_account")],
+        anchor.workspace.AnchorVoting.programId
+      );
+
+    console.log(secondProposalAccountPublicKey, secondAccountBump);
+
+    await program.rpc.addProposal(
+      secondAccountBump,
+      "Second Test Title",
+      "Second Test Description",
+      {
+        accounts: {
+          baseAccount: baseAccount.publicKey,
+          proposalAccount: secondProposalAccountPublicKey,
+          user: provider.wallet.publicKey,
+          systemProgram: SystemProgram.programId,
+        },
+      }
+    );
+
     const account = await program.account.baseAccount.fetch(
       baseAccount.publicKey
     );
-    assert.ok(account.totalProposalCount.toNumber() === 1);
-    const firstProposal = (
-      account.proposalList as IdlTypes<AnchorVoting>["Proposal"][]
-    )[0];
-    assert.ok(firstProposal.votedUsers.length === 1);
-    assert.ok(firstProposal.voteYes.toNumber() === 1);
-    assert.ok(firstProposal.voteNo.toNumber() === 0);
+
+    const proposalList = account.proposalList;
+
+    proposalList.forEach(async (proposal) => {
+      const proposalAccount = await program.account.proposalAccount.fetch(
+        proposal
+      );
+      console.log(proposalAccount);
+    });
+
+    assert.ok(account.totalProposalCount.toNumber() === 2);
+    console.log("🗳 Base Account ", account);
   });
+
+  // it("Can vote for a proposal!", async () => {
+  //   await program.rpc.voteForProposal(new anchor.BN(0), true, {
+  //     accounts: {
+  //       baseAccount: baseAccount.publicKey,
+  //       user: provider.wallet.publicKey,
+  //     },
+  //   });
+  //   const account = await program.account.baseAccount.fetch(
+  //     baseAccount.publicKey
+  //   );
+  //   assert.ok(account.totalProposalCount.toNumber() === 1);
+  //   const firstProposal = (
+  //     account.proposalList as IdlTypes<AnchorVoting>["Proposal"][]
+  //   )[0];
+  //   assert.ok(firstProposal.votedUsers.length === 1);
+  //   assert.ok(firstProposal.voteYes.toNumber() === 1);
+  //   assert.ok(firstProposal.voteNo.toNumber() === 0);
+  //   console.log("🗳 Proposal List: ", account.proposalList);
+  // });
+
+  // it("Can not vote for a same proposal twice!", async () => {
+  //   await assert.rejects(
+  //     async () => {
+  //       await program.rpc.voteForProposal(new anchor.BN(0), true, {
+  //         accounts: {
+  //           baseAccount: baseAccount.publicKey,
+  //           user: provider.wallet.publicKey,
+  //         },
+  //       });
+  //     },
+  //     {
+  //       name: "Error",
+  //       message: "301: You have already voted for this proposal",
+  //     }
+  //   );
+  //   const account = await program.account.baseAccount.fetch(
+  //     baseAccount.publicKey
+  //   );
+  //   assert.ok(account.totalProposalCount.toNumber() === 1);
+  //   const firstProposal = (
+  //     account.proposalList as IdlTypes<AnchorVoting>["Proposal"][]
+  //   )[0];
+  //   assert.ok(firstProposal.votedUsers.length === 1);
+  //   assert.ok(firstProposal.voteYes.toNumber() === 1);
+  //   assert.ok(firstProposal.voteNo.toNumber() === 0);
+  // });
 });

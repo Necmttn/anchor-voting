@@ -32,12 +32,26 @@
           "isSigner": false
         },
         {
+          "name": "proposalAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "user",
           "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
+        {
+          "name": "proposalAccountBump",
+          "type": "u8"
+        },
         {
           "name": "title",
           "type": "string"
@@ -53,6 +67,11 @@
       "accounts": [
         {
           "name": "baseAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "proposalAccount",
           "isMut": true,
           "isSigner": false
         },
@@ -76,6 +95,24 @@
   ],
   "accounts": [
     {
+      "name": "ProposalAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "proposal",
+            "type": {
+              "defined": "Proposal"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "BaseAccount",
       "type": {
         "kind": "struct",
@@ -87,9 +124,7 @@
           {
             "name": "proposalList",
             "type": {
-              "vec": {
-                "defined": "Proposal"
-              }
+              "vec": "publicKey"
             }
           }
         ]
