@@ -5,7 +5,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "new_deploy": "yarn generate-keypair && yarn copy-idl",
+    "generate-keypair": "node scripts/createKeyPair.js",
+    "copy-idl": "node scripts/copyIdl.js"
   },
   "dependencies": {
     "@project-serum/anchor": "^0.18.2",

@@ -147,8 +147,12 @@
             "type": "u64"
           },
           {
-            "name": "vote",
-            "type": "i64"
+            "name": "voteYes",
+            "type": "u64"
+          },
+          {
+            "name": "voteNo",
+            "type": "u64"
           }
         ]
       }
@@ -176,13 +180,8 @@
     },
     {
       "code": 301,
-      "name": "YouCannotVoteForYourOwnProposal",
-      "msg": "You can not vote for your own proposal"
-    },
-    {
-      "code": 302,
       "name": "YouAlreadyVotedForThisProposal",
-      "msg": "You have already voted return for this proposal"
+      "msg": "You have already voted for this proposal"
     }
   ],
   "metadata": {
