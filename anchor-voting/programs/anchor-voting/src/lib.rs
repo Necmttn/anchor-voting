@@ -40,13 +40,10 @@ mod anchor_voting {
         proposal.description = description;
         proposal.vote_yes =  0;
         proposal.vote_no = 0;
+        proposal.created_at = Clock::get()?.unix_timestamp;
 
         proposal.bump = proposal_account_bump;
 
-        // add proposal to base account proposals
-        base_account
-            .proposal_list
-            .push(proposal.to_account_info().key.clone());
         // increment total proposal count
         base_account.total_proposal_count += 1;
         Ok(())
@@ -55,41 +52,41 @@ mod anchor_voting {
     // vote on a proposal
     pub fn vote_for_proposal(
         ctx: Context<VoteForProposal>,
+        vote_account_bump: u8,
         proposal_id: u64,
         vote: bool,
     ) -> ProgramResult {
-        let base_account = &mut ctx.accounts.base_account;
-        let proposal_account = &mut ctx.accounts.proposal_account;
+        let proposal = &mut ctx.accounts.proposal;
+        let vote_account = &mut ctx.accounts.vote;
         let user = &mut ctx.accounts.user;
-        // get proposal
-        let proposal = base_account.proposal_list.get_mut(proposal_id as usize);
-        // check if proposal exists
-        if let None = proposal {
-            // return error if proposal does not exist
-            return Err(ErrorCode::ProposalIndexOutOfBounds.into());
-        }
-        // unwrap proposal so we can access it
+
+        vote_account.proposal_id = proposal_id;
+        vote_account.voter = *user.to_account_info().key;
+        vote_account.vote = vote;
+        vote_account.created_at =  Clock::get()?.unix_timestamp;
+        vote_account.bump =  vote_account_bump;
 
         // check if user has already voted on this proposal
-        if proposal_account
-            .proposal
-            .voted_users
-            .contains(&*user.to_account_info().key)
-        {
-            // return error if user has already voted on this proposal
-            return Err(ErrorCode::YouAlreadyVotedForThisProposal.into());
-        }
+        // if proposal_account
+        //     .proposal
+        //     .voted_users
+        //     .contains(&*user.to_account_info().key)
+        // {
+        //     // return error if user has already voted on this proposal
+        //     return Err(ErrorCode::YouAlreadyVotedForThisProposal.into());
+        // }
 
         // add user to voted users.
-        proposal_account
-            .proposal
-            .voted_users
-            .push(*user.to_account_info().key);
+        // proposal_account
+        //     .proposal
+        //     .voted_users
+        //     .push(*user.to_account_info().key);
+
         // corespoing vote count base on `vote`
         if vote {
-            proposal_account.proposal.vote_yes += 1
+            proposal.vote_yes += 1
         } else {
-            proposal_account.proposal.vote_no += 1
+            proposal.vote_no += 1
         }
         Ok(())
     }
@@ -110,7 +107,7 @@ pub struct AddProposal<'info> {
     #[account(mut)]
     pub base_account: Account<'info, BaseAccount>,
 
-    #[account(init, seeds = [b"proposal_account".as_ref(), proposal_id.to_le_bytes().as_ref()], bump = {msg!("bump be {}", proposal_account_bump); proposal_account_bump}, payer = user, space = 10240)]
+    #[account(init, seeds = [b"proposal_account".as_ref(), proposal_id.to_le_bytes().as_ref()], bump =  proposal_account_bump, payer = user, space = Proposal::LEN)]
     pub proposal: Account<'info, Proposal>,
 
     #[account(mut)]
@@ -119,26 +116,37 @@ pub struct AddProposal<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(proposal_id: u64)]
+#[instruction(vote_account_bump: u8, proposal_id: u64)]
 pub struct VoteForProposal<'info> {
-    #[account(mut)]
-    pub base_account: Account<'info, BaseAccount>,
-    #[account(mut, seeds = [b"proposal_account".as_ref(), proposal_id.to_be_bytes().as_ref()], bump = proposal_account.bump)]
-    pub proposal_account: Account<'info, Proposal>,
+    #[account(mut, seeds = [b"proposal_account".as_ref(), proposal_id.to_be_bytes().as_ref()], bump = proposal.bump)]
+    pub proposal: Account<'info, Proposal>,
+
+    #[account(init, seeds = [b"vote_account".as_ref(), proposal_id.to_le_bytes().as_ref()] , bump = vote_account_bump, payer = user, space = Vote::LEN)]
+    pub vote: Account<'info, Vote>,
+
     #[account(mut)]
     pub user: Signer<'info>,
+    pub system_program: Program<'info, System>,
 }
 
 #[account]
 pub struct Proposal {
     pub id: u64, // unique id for each proposal
     pub owner: Pubkey,
-    pub created_at: u64,
+    pub created_at: i64,
     pub title: String,
     pub description: String,
-    pub voted_users: Vec<Pubkey>, //we wanna keep track of who voted
     pub vote_yes: u64,
     pub vote_no: u64,
+    pub bump: u8,
+}
+
+#[account]
+pub struct Vote {
+    pub proposal_id: u64,
+    pub vote: bool,
+    pub voter: Pubkey,
+    pub created_at: i64,
     pub bump: u8,
 }
 
@@ -146,7 +154,6 @@ pub struct Proposal {
 #[account]
 pub struct BaseAccount {
     pub total_proposal_count: u64,
-    pub proposal_list: Vec<Pubkey>,
 }
 
 #[error]
@@ -161,9 +168,34 @@ pub enum ErrorCode {
     DescriptionIsTooLong,
 }
 
+const U64_LEN: usize = 8;
 const DISCRIMINATOR_LENGTH: usize = 8;
 const PUBKEY_LENGTH: usize = 32;
 const TIMESTAMP_LENGTH: usize = 8;
 const STRING_LENGTH_PREFIX: usize = 4;
-const MAX_PROPOSAL_TITLE_LENGTH: usize = 80 * 4;
-const MAX_CONTENT_LENGTH: usize = 1024 * 4;
+const MAX_PROPOSAL_TITLE_LENGTH: usize = 80 * STRING_LENGTH_PREFIX;
+const MAX_PROPOSAL_DESCRIPTION_LENGTH: usize = 1024 * STRING_LENGTH_PREFIX;
+const VOTE_COUNT_LENGTH: usize = U64_LEN;
+const BUMP_LENGTH: usize = 1;
+const BOOL_LENGTH: usize = 1;
+
+impl Proposal {
+    const LEN: usize = DISCRIMINATOR_LENGTH 
+    + U64_LEN // id
+    + PUBKEY_LENGTH // Author
+    + TIMESTAMP_LENGTH // Timestamp
+    + MAX_PROPOSAL_TITLE_LENGTH // Title 
+    + MAX_PROPOSAL_DESCRIPTION_LENGTH // Description 
+    + VOTE_COUNT_LENGTH // vote yes count
+    + VOTE_COUNT_LENGTH // vote no count
+    + BUMP_LENGTH;
+}
+
+impl Vote {
+    const LEN: usize = DISCRIMINATOR_LENGTH 
+    + U64_LEN // proposal id
+    + BOOL_LENGTH // vote
+    + PUBKEY_LENGTH // Author
+    + TIMESTAMP_LENGTH
+    + BUMP_LENGTH;
+}
