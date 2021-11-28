@@ -1,7 +1,7 @@
 import { AnchorVoting } from "./../target/types/anchor_voting";
 import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
-import { SystemProgram } from "@solana/web3.js";
+import { LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
 import assert from "assert";
 import { base64 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 
@@ -118,7 +118,11 @@ describe("anchor-voting", () => {
 
     const [voteAccountPublicKey, voteBump] =
       await anchor.web3.PublicKey.findProgramAddress(
-        [Buffer.from("vote_account"), proposalId],
+        [
+          Buffer.from("vote_account"),
+          proposalId,
+          provider.wallet.publicKey.toBuffer(),
+        ],
         anchor.workspace.AnchorVoting.programId
       );
     console.log(voteAccountPublicKey.toString(), voteBump);
@@ -145,60 +149,126 @@ describe("anchor-voting", () => {
 
     assert.ok(proposal.length === 2);
     console.log(account, proposal, vote);
-    // const firstProposalAccount = await program.account.proposal.fetch(
-    //   firstProposalPubKey
-    // );
-    // assert.ok(firstProposalAccount.voteYes.toNumber() === 1);
-    // assert.ok(firstProposalAccount.voteNo.toNumber() === 0);
-
-    // const votes = await program.account.vote.all();
-    // assert.ok(votes.length === 1);
   });
 
-  // it("Can not vote for a same proposal twice!", async () => {
-  //   await assert.rejects(
-  //     async () => {
-  //       const proposalId = getProposalIdBuffer(0);
-  //       const [proposalAccountPublicKey] =
-  //         await anchor.web3.PublicKey.findProgramAddress(
-  //           [Buffer.from("proposal_account"), proposalId],
-  //           anchor.workspace.AnchorVoting.programId
-  //         );
-  //       await program.rpc.voteForProposal(new anchor.BN(0), true, {
-  //         accounts: {
-  //           baseAccount: baseAccount.publicKey,
-  //           proposalAccount: proposalAccountPublicKey,
-  //           user: provider.wallet.publicKey,
-  //         },
-  //       });
-  //     },
-  //     {
-  //       name: "Error",
-  //       message: "301: You have already voted for this proposal",
-  //     }
-  //   );
-  //   const account = await program.account.baseAccount.fetch(
-  //     baseAccount.publicKey
-  //   );
-  //   const firstProposalPubKey = account.proposalList[0];
-  //   const firstProposalAccount = await program.account.proposalAccount.fetch(
-  //     firstProposalPubKey
-  //   );
-  //   assert.ok(firstProposalAccount.proposal.votedUsers.length === 1);
-  //   assert.ok(firstProposalAccount.proposal.voteYes.toNumber() === 1);
-  //   assert.ok(firstProposalAccount.proposal.voteNo.toNumber() === 0);
-  //   console.log("🗳 Proposal List: ", firstProposalAccount);
-  // });
+  it("Can not vote for a same proposal twice!", async () => {
+    await assert.rejects(
+      async () => {
+        const proposalId = getProposalIdBuffer(0);
+        const [proposalAccountPublicKey] =
+          await anchor.web3.PublicKey.findProgramAddress(
+            [Buffer.from("proposal_account"), proposalId],
+            anchor.workspace.AnchorVoting.programId
+          );
 
-  // it("We Can filter Proposals", async () => {
-  //   const proposal = await program.account.proposalAccount.all([
-  //     {
-  //       memcmp: {
-  //         offset: 8, // Discriminator.
-  //         bytes: base64.encode(1),
-  //       },
-  //     },
-  //   ]);
-  //   console.log("🗳 Proposal List: ", proposal);
-  // });
+        const [voteAccountPublicKey, voteBump] =
+          await anchor.web3.PublicKey.findProgramAddress(
+            [
+              Buffer.from("vote_account"),
+              proposalId,
+              provider.wallet.publicKey.toBuffer(),
+            ],
+            anchor.workspace.AnchorVoting.programId
+          );
+        console.log(voteAccountPublicKey.toString(), voteBump);
+        await program.rpc.voteForProposal(voteBump, new anchor.BN(0), true, {
+          accounts: {
+            proposal: proposalAccountPublicKey,
+            user: provider.wallet.publicKey,
+            vote: voteAccountPublicKey,
+            systemProgram: SystemProgram.programId,
+          },
+        });
+      },
+      {
+        name: "Error",
+        // message: "301: You have already voted for this proposal",
+      }
+    );
+  });
+
+  it("Can not vote for a proposal that does not exist!", async () => {
+    await assert.rejects(
+      async () => {
+        const proposalId = getProposalIdBuffer(999999009);
+        const [proposalAccountPublicKey] =
+          await anchor.web3.PublicKey.findProgramAddress(
+            [Buffer.from("proposal_account"), proposalId],
+            anchor.workspace.AnchorVoting.programId
+          );
+
+        const [voteAccountPublicKey, voteBump] =
+          await anchor.web3.PublicKey.findProgramAddress(
+            [
+              Buffer.from("vote_account"),
+              proposalId,
+              provider.wallet.publicKey.toBuffer(),
+            ],
+            anchor.workspace.AnchorVoting.programId
+          );
+        console.log(voteAccountPublicKey.toString(), voteBump);
+        await program.rpc.voteForProposal(
+          voteBump,
+          new anchor.BN(999999009),
+          true,
+          {
+            accounts: {
+              proposal: proposalAccountPublicKey,
+              user: provider.wallet.publicKey,
+              vote: voteAccountPublicKey,
+              systemProgram: SystemProgram.programId,
+            },
+          }
+        );
+      },
+      {
+        name: "Error",
+        // message: "301: You have already voted for this proposal",
+      }
+    );
+  });
+
+  it("New User Can Vote", async () => {
+    const newUser = anchor.web3.Keypair.generate();
+    const signature = await program.provider.connection.requestAirdrop(
+      newUser.publicKey,
+      1 * LAMPORTS_PER_SOL
+    );
+    await program.provider.connection.confirmTransaction(signature);
+
+    const proposalId = getProposalIdBuffer(0);
+    const [proposalAccountPublicKey] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [Buffer.from("proposal_account"), proposalId],
+        anchor.workspace.AnchorVoting.programId
+      );
+
+    const [voteAccountPublicKey, voteBump] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [Buffer.from("vote_account"), proposalId, newUser.publicKey.toBuffer()],
+        anchor.workspace.AnchorVoting.programId
+      );
+
+    await program.rpc.voteForProposal(voteBump, new anchor.BN(0), true, {
+      accounts: {
+        proposal: proposalAccountPublicKey,
+        user: newUser.publicKey,
+        vote: voteAccountPublicKey,
+        systemProgram: SystemProgram.programId,
+      },
+      signers: [newUser],
+    });
+  });
+
+  it("We Can filter Proposals", async () => {
+    const proposal = await program.account.proposal.all([
+      {
+        memcmp: {
+          offset: 8, // Discriminator.
+          bytes: base64.encode(0),
+        },
+      },
+    ]);
+    console.log("🗳 Proposal List: ", proposal);
+  });
 });
