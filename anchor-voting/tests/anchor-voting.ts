@@ -3,6 +3,7 @@ import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
 import { SystemProgram } from "@solana/web3.js";
 import assert from "assert";
+import { base64 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 
 describe("anchor-voting", () => {
   // Configure the client to use the local cluster.
@@ -120,12 +121,12 @@ describe("anchor-voting", () => {
 
   it("Can vote for a proposal!", async () => {
     const proposalId = getProposalIdBuffer(0);
-    const [proposalAccountPublicKey, accountBump] =
+    const [proposalAccountPublicKey] =
       await anchor.web3.PublicKey.findProgramAddress(
         [Buffer.from("proposal_account"), proposalId],
         anchor.workspace.AnchorVoting.programId
       );
-    await program.rpc.voteForProposal(accountBump, new anchor.BN(0), true, {
+    await program.rpc.voteForProposal(new anchor.BN(0), true, {
       accounts: {
         baseAccount: baseAccount.publicKey,
         proposalAccount: proposalAccountPublicKey,
@@ -150,12 +151,12 @@ describe("anchor-voting", () => {
     await assert.rejects(
       async () => {
         const proposalId = getProposalIdBuffer(0);
-        const [proposalAccountPublicKey, accountBump] =
+        const [proposalAccountPublicKey] =
           await anchor.web3.PublicKey.findProgramAddress(
             [Buffer.from("proposal_account"), proposalId],
             anchor.workspace.AnchorVoting.programId
           );
-        await program.rpc.voteForProposal(accountBump, new anchor.BN(0), true, {
+        await program.rpc.voteForProposal(new anchor.BN(0), true, {
           accounts: {
             baseAccount: baseAccount.publicKey,
             proposalAccount: proposalAccountPublicKey,
@@ -179,5 +180,17 @@ describe("anchor-voting", () => {
     assert.ok(firstProposalAccount.proposal.voteYes.toNumber() === 1);
     assert.ok(firstProposalAccount.proposal.voteNo.toNumber() === 0);
     console.log("🗳 Proposal List: ", firstProposalAccount);
+  });
+
+  it("We Can filter Proposals", async () => {
+    const proposal = await program.account.proposalAccount.all([
+      {
+        memcmp: {
+          offset: 8, // Discriminator.
+          bytes: base64.encode(1),
+        },
+      },
+    ]);
+    console.log("🗳 Proposal List: ", proposal);
   });
 });

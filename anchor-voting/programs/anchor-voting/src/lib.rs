@@ -23,26 +23,30 @@ mod anchor_voting {
         description: String,
     ) -> ProgramResult {
         let base_account = &mut ctx.accounts.base_account;
-        let proposal_account = &mut ctx.accounts.proposal_account;
+        let proposal = &mut ctx.accounts.proposal;
         let user = &mut ctx.accounts.user;
 
-        let proposal = Proposal {
-            id: proposal_id,
-            title,
-            owner: *user.to_account_info().key,
-            description,
-            voted_users: Vec::new(),
-            vote_yes: 0,
-            vote_no: 0,
-        };
+        if title.chars().count() > 80 {
+            return Err(ErrorCode::TitleIsTooLong.into());
+        }
 
-        proposal_account.bump = proposal_account_bump;
-        proposal_account.proposal = proposal;
+        if description.chars().count() > 1024 {
+            return Err(ErrorCode::DescriptionIsTooLong.into());
+        }
+
+        proposal.id = proposal_id;
+        proposal.owner = *user.to_account_info().key;
+        proposal.title = title;
+        proposal.description = description;
+        proposal.vote_yes =  0;
+        proposal.vote_no = 0;
+
+        proposal.bump = proposal_account_bump;
 
         // add proposal to base account proposals
         base_account
             .proposal_list
-            .push(proposal_account.to_account_info().key.clone());
+            .push(proposal.to_account_info().key.clone());
         // increment total proposal count
         base_account.total_proposal_count += 1;
         Ok(())
@@ -51,7 +55,6 @@ mod anchor_voting {
     // vote on a proposal
     pub fn vote_for_proposal(
         ctx: Context<VoteForProposal>,
-        _proposal_account_bump: u8,
         proposal_id: u64,
         vote: bool,
     ) -> ProgramResult {
@@ -108,7 +111,7 @@ pub struct AddProposal<'info> {
     pub base_account: Account<'info, BaseAccount>,
 
     #[account(init, seeds = [b"proposal_account".as_ref(), proposal_id.to_le_bytes().as_ref()], bump = {msg!("bump be {}", proposal_account_bump); proposal_account_bump}, payer = user, space = 10240)]
-    pub proposal_account: Account<'info, ProposalAccount>,
+    pub proposal: Account<'info, Proposal>,
 
     #[account(mut)]
     pub user: Signer<'info>,
@@ -116,19 +119,26 @@ pub struct AddProposal<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(proposal_account_bump: u8, proposal_id: u64)]
+#[instruction(proposal_id: u64)]
 pub struct VoteForProposal<'info> {
     #[account(mut)]
     pub base_account: Account<'info, BaseAccount>,
     #[account(mut, seeds = [b"proposal_account".as_ref(), proposal_id.to_be_bytes().as_ref()], bump = proposal_account.bump)]
-    pub proposal_account: Account<'info, ProposalAccount>,
+    pub proposal_account: Account<'info, Proposal>,
     #[account(mut)]
     pub user: Signer<'info>,
 }
 
 #[account]
-pub struct ProposalAccount {
-    pub proposal: Proposal,
+pub struct Proposal {
+    pub id: u64, // unique id for each proposal
+    pub owner: Pubkey,
+    pub created_at: u64,
+    pub title: String,
+    pub description: String,
+    pub voted_users: Vec<Pubkey>, //we wanna keep track of who voted
+    pub vote_yes: u64,
+    pub vote_no: u64,
     pub bump: u8,
 }
 
@@ -139,23 +149,21 @@ pub struct BaseAccount {
     pub proposal_list: Vec<Pubkey>,
 }
 
-#[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize)]
-pub struct Proposal {
-    pub id: u64, // unique id for each proposal
-    pub title: String,
-    pub description: String,
-    pub voted_users: Vec<Pubkey>, //we wanna keep track of who voted
-    pub owner: Pubkey,
-    pub vote_yes: u64,
-    pub vote_no: u64,
-    // pub vote_yes: Vec<Pubkey>, if we wanna keep track of who voted yes
-    // pub vote_no: Vec<Pubkey>, if we wanna keep track of who voted no
-}
-
 #[error]
 pub enum ErrorCode {
     #[msg("No Proposal at this index")]
     ProposalIndexOutOfBounds,
     #[msg("You have already voted for this proposal")]
     YouAlreadyVotedForThisProposal,
+    #[msg("Title is too long. maximum: 80 character")]
+    TitleIsTooLong,
+    #[msg("Description is too long. maximum: 1024 character")]
+    DescriptionIsTooLong,
 }
+
+const DISCRIMINATOR_LENGTH: usize = 8;
+const PUBKEY_LENGTH: usize = 32;
+const TIMESTAMP_LENGTH: usize = 8;
+const STRING_LENGTH_PREFIX: usize = 4;
+const MAX_PROPOSAL_TITLE_LENGTH: usize = 80 * 4;
+const MAX_CONTENT_LENGTH: usize = 1024 * 4;

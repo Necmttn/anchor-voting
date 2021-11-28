@@ -87,10 +87,6 @@ export type AnchorVoting = {
       ],
       "args": [
         {
-          "name": "proposalAccountBump",
-          "type": "u8"
-        },
-        {
           "name": "proposalId",
           "type": "u64"
         },
@@ -189,6 +185,16 @@ export type AnchorVoting = {
       "code": 301,
       "name": "YouAlreadyVotedForThisProposal",
       "msg": "You have already voted for this proposal"
+    },
+    {
+      "code": 302,
+      "name": "TitleIsTooLong",
+      "msg": "Title is too long. maximum: 80 character"
+    },
+    {
+      "code": 303,
+      "name": "DescriptionIsTooLong",
+      "msg": "Description is too long. maximum: 1024 character"
     }
   ]
 };
@@ -282,10 +288,6 @@ export const IDL: AnchorVoting = {
       ],
       "args": [
         {
-          "name": "proposalAccountBump",
-          "type": "u8"
-        },
-        {
           "name": "proposalId",
           "type": "u64"
         },
@@ -384,6 +386,16 @@ export const IDL: AnchorVoting = {
       "code": 301,
       "name": "YouAlreadyVotedForThisProposal",
       "msg": "You have already voted for this proposal"
+    },
+    {
+      "code": 302,
+      "name": "TitleIsTooLong",
+      "msg": "Title is too long. maximum: 80 character"
+    },
+    {
+      "code": 303,
+      "name": "DescriptionIsTooLong",
+      "msg": "Description is too long. maximum: 1024 character"
     }
   ]
 };
