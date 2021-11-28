@@ -4,6 +4,7 @@ import { Program } from "@project-serum/anchor";
 import { LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
 import assert from "assert";
 import { base64 } from "@project-serum/anchor/dist/cjs/utils/bytes";
+import * as bs58 from "bs58";
 
 describe("anchor-voting", () => {
   // Configure the client to use the local cluster.
@@ -15,11 +16,36 @@ describe("anchor-voting", () => {
   // The Account to create.
   const baseAccount = anchor.web3.Keypair.generate();
 
-  const getProposalIdBuffer = (total: number) => {
-    const totalProposalAccountBuf = Buffer.alloc(8);
+  const getNumberBuffer = (total: number, alloc = 8) => {
+    const totalProposalAccountBuf = Buffer.alloc(alloc);
     totalProposalAccountBuf.writeUIntLE(total, 0, 6);
+    totalProposalAccountBuf.write;
     return totalProposalAccountBuf;
   };
+
+  /**
+   * BYTE   8-bit unsigned                          buf.writeUInt8()
+   * SBYTE  8-bit signed                            buf.writeInt8()
+   * BOOL   8-bit boolean (0x00=False, 0xFF=True)   buf.fill(0x00) || buf.fill(0xFF)
+   * CHAR   8-bit single ASCII character            buf.from('Text', 'ascii') - Make 8-bit?
+   * UNI    16-bit single unicode character         buf.from('A', 'utf16le') - Correct?
+   * SHORT  16-bit signed                           buf.writeInt16BE() - @see https://www.reddit.com/r/node/comments/9hob2u/buffer_endianness_little_endian_or_big_endian_how/
+   * USHORT 16-bit unsigned                         buf.writeUInt16BE() - @see https://www.reddit.com/r/node/comments/9hob2u/buffer_endianness_little_endian_or_big_endian_how/
+   * INT    32-bit signed                           buf.writeInt32BE - @see https://www.reddit.com/r/node/comments/9hob2u/buffer_endianness_little_endian_or_big_endian_how/
+   * UINT   32-bit unsigned                         buf.writeUInt32BE - @see https://www.reddit.com/r/node/comments/9hob2u/buffer_endianness_little_endian_or_big_endian_how/
+   */
+
+  const TRUE = Buffer.alloc(1).fill(0xff);
+  const FALSE = Buffer.alloc(1).fill(0x00);
+
+  const newUser = anchor.web3.Keypair.generate();
+  before(async () => {
+    const signature = await program.provider.connection.requestAirdrop(
+      newUser.publicKey,
+      1 * LAMPORTS_PER_SOL
+    );
+    await program.provider.connection.confirmTransaction(signature);
+  });
 
   it("Is initialized!", async () => {
     // Add your test here.
@@ -44,9 +70,7 @@ describe("anchor-voting", () => {
       baseAccount.publicKey
     );
     console.log("Your account", account);
-    const proposalId = getProposalIdBuffer(
-      account.totalProposalCount.toNumber()
-    );
+    const proposalId = getNumberBuffer(account.totalProposalCount.toNumber());
     const [proposalAccountPublicKey, accountBump] =
       await anchor.web3.PublicKey.findProgramAddress(
         [Buffer.from("proposal_account"), proposalId],
@@ -75,7 +99,7 @@ describe("anchor-voting", () => {
     account = await program.account.baseAccount.fetch(baseAccount.publicKey);
     console.log("Your account", account);
 
-    const secondProposalId = getProposalIdBuffer(
+    const secondProposalId = getNumberBuffer(
       account.totalProposalCount.toNumber()
     );
     const [secondProposalAccountPublicKey, secondAccountBump] =
@@ -109,7 +133,7 @@ describe("anchor-voting", () => {
   });
 
   it("Can vote for a proposal!", async () => {
-    const proposalId = getProposalIdBuffer(0);
+    const proposalId = getNumberBuffer(0);
     const [proposalAccountPublicKey] =
       await anchor.web3.PublicKey.findProgramAddress(
         [Buffer.from("proposal_account"), proposalId],
@@ -134,27 +158,44 @@ describe("anchor-voting", () => {
         systemProgram: SystemProgram.programId,
       },
     });
-    const account = await program.account.baseAccount.fetch(
-      baseAccount.publicKey
-    );
-    const proposal = await program.account.proposal.all([
-      {
-        memcmp: {
-          offset: 8, // Discriminator.
-          bytes: base64.encode(1),
-        },
-      },
-    ]);
     const vote = await program.account.vote.all();
+    assert.ok(vote.length === 1);
+  });
 
-    assert.ok(proposal.length === 2);
-    console.log(account, proposal, vote);
+  it("Can vote for a second proposal!", async () => {
+    const proposalId = getNumberBuffer(1);
+    const [proposalAccountPublicKey] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [Buffer.from("proposal_account"), proposalId],
+        anchor.workspace.AnchorVoting.programId
+      );
+
+    const [voteAccountPublicKey, voteBump] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [
+          Buffer.from("vote_account"),
+          proposalId,
+          provider.wallet.publicKey.toBuffer(),
+        ],
+        anchor.workspace.AnchorVoting.programId
+      );
+    console.log(voteAccountPublicKey.toString(), voteBump);
+    await program.rpc.voteForProposal(voteBump, new anchor.BN(1), false, {
+      accounts: {
+        proposal: proposalAccountPublicKey,
+        user: provider.wallet.publicKey,
+        vote: voteAccountPublicKey,
+        systemProgram: SystemProgram.programId,
+      },
+    });
+    const vote = await program.account.vote.all();
+    assert.equal(vote.length, 2);
   });
 
   it("Can not vote for a same proposal twice!", async () => {
     await assert.rejects(
       async () => {
-        const proposalId = getProposalIdBuffer(0);
+        const proposalId = getNumberBuffer(0);
         const [proposalAccountPublicKey] =
           await anchor.web3.PublicKey.findProgramAddress(
             [Buffer.from("proposal_account"), proposalId],
@@ -179,18 +220,29 @@ describe("anchor-voting", () => {
             systemProgram: SystemProgram.programId,
           },
         });
+
+        // await program.rpc.voteForProposal(voteBump, new anchor.BN(1), false, {
+        //   accounts: {
+        //     proposal: proposalAccountPublicKey,
+        //     user: provider.wallet.publicKey,
+        //     vote: voteAccountPublicKey,
+        //     systemProgram: SystemProgram.programId,
+        //   },
+        // });
       },
       {
         name: "Error",
         // message: "301: You have already voted for this proposal",
       }
     );
+    const vote = await program.account.vote.all();
+    assert.ok(vote.length === 1);
   });
 
   it("Can not vote for a proposal that does not exist!", async () => {
     await assert.rejects(
       async () => {
-        const proposalId = getProposalIdBuffer(999999009);
+        const proposalId = getNumberBuffer(999999009);
         const [proposalAccountPublicKey] =
           await anchor.web3.PublicKey.findProgramAddress(
             [Buffer.from("proposal_account"), proposalId],
@@ -226,22 +278,23 @@ describe("anchor-voting", () => {
         // message: "301: You have already voted for this proposal",
       }
     );
+
+    const vote = await program.account.vote.all();
+    assert.ok(vote.length === 1);
   });
 
-  it("New User Can Vote", async () => {
-    const newUser = anchor.web3.Keypair.generate();
-    const signature = await program.provider.connection.requestAirdrop(
-      newUser.publicKey,
-      1 * LAMPORTS_PER_SOL
-    );
-    await program.provider.connection.confirmTransaction(signature);
-
-    const proposalId = getProposalIdBuffer(0);
+  it("New User Can Vote to first proposal", async () => {
+    const proposalId = getNumberBuffer(0);
     const [proposalAccountPublicKey] =
       await anchor.web3.PublicKey.findProgramAddress(
         [Buffer.from("proposal_account"), proposalId],
         anchor.workspace.AnchorVoting.programId
       );
+
+    const firstProposal = await program.account.proposal.fetch(
+      proposalAccountPublicKey
+    );
+    assert.ok(firstProposal.title === "Test Title");
 
     const [voteAccountPublicKey, voteBump] =
       await anchor.web3.PublicKey.findProgramAddress(
@@ -249,7 +302,7 @@ describe("anchor-voting", () => {
         anchor.workspace.AnchorVoting.programId
       );
 
-    await program.rpc.voteForProposal(voteBump, new anchor.BN(0), true, {
+    await program.rpc.voteForProposal(voteBump, new anchor.BN(0), false, {
       accounts: {
         proposal: proposalAccountPublicKey,
         user: newUser.publicKey,
@@ -258,17 +311,94 @@ describe("anchor-voting", () => {
       },
       signers: [newUser],
     });
+
+    const vote = await program.account.vote.all();
+    assert.ok(vote.length === 2);
   });
 
-  it("We Can filter Proposals", async () => {
-    const proposal = await program.account.proposal.all([
+  it("New user can vote to second proposal", async () => {
+    const secondProposalId = getNumberBuffer(1);
+    const [secondProposalAccountPublicKey] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [Buffer.from("proposal_account"), secondProposalId],
+        anchor.workspace.AnchorVoting.programId
+      );
+
+    const secondProposal = await program.account.proposal.fetch(
+      secondProposalAccountPublicKey
+    );
+
+    assert.ok(secondProposal.title === "Second Test Title");
+
+    console.log([
+      Buffer.from("vote_account"),
+      secondProposalId,
+      newUser.publicKey.toBuffer(),
+    ]);
+
+    const [secondVoteAccountPublicKey, secondVoteBump] =
+      await anchor.web3.PublicKey.findProgramAddress(
+        [
+          Buffer.from("vote_account"),
+          secondProposalId,
+          newUser.publicKey.toBuffer(),
+        ],
+        anchor.workspace.AnchorVoting.programId
+      );
+
+    console.log(secondVoteAccountPublicKey.toString(), secondVoteBump);
+
+    await program.rpc.voteForProposal(secondVoteBump, secondProposal.id, true, {
+      accounts: {
+        proposal: secondProposalAccountPublicKey,
+        vote: secondVoteAccountPublicKey,
+        user: newUser.publicKey,
+        systemProgram: SystemProgram.programId,
+      },
+      signers: [newUser],
+    });
+
+    const vote = await program.account.vote.all();
+    assert.ok(vote.length === 3);
+  });
+
+  it("We can get votes for Proposals", async () => {
+    const proposalOneVotes = await program.account.vote.all([
       {
         memcmp: {
           offset: 8, // Discriminator.
-          bytes: base64.encode(0),
+          bytes: bs58.encode(getNumberBuffer(0)),
         },
       },
     ]);
-    console.log("🗳 Proposal List: ", proposal);
+    assert.ok(proposalOneVotes.length === 2);
+  });
+
+  it("We can filter votes which is yes", async () => {
+    const proposalOneYesVotes = await program.account.vote.all([
+      {
+        memcmp: {
+          offset: 8, // Discriminator.
+          bytes: bs58.encode(Buffer.concat([getNumberBuffer(0), TRUE])),
+        },
+      },
+    ]);
+    console.log(proposalOneYesVotes);
+    assert.equal(proposalOneYesVotes.length, 1);
+    assert.ok(proposalOneYesVotes[0].account.vote === true);
+  });
+
+  it("We can filter votes which is no", async () => {
+    const proposalOneNoVotes = await program.account.vote.all([
+      {
+        memcmp: {
+          offset: 8, // Discriminator.
+          bytes: bs58.encode(Buffer.concat([getNumberBuffer(0), FALSE])),
+        },
+      },
+    ]);
+    console.log(proposalOneNoVotes);
+    assert.ok(proposalOneNoVotes.length === 1);
+    assert.ok(proposalOneNoVotes[0].account.vote === false);
   });
 });

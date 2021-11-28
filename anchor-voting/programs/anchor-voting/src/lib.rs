@@ -118,7 +118,7 @@ pub struct AddProposal<'info> {
 #[derive(Accounts)]
 #[instruction(vote_account_bump: u8, proposal_id: u64)]
 pub struct VoteForProposal<'info> {
-    #[account(mut, seeds = [b"proposal_account".as_ref(), proposal_id.to_be_bytes().as_ref()], bump = proposal.bump)]
+    #[account(mut, seeds = [b"proposal_account".as_ref(), proposal_id.to_le_bytes().as_ref()], bump = proposal.bump)]
     pub proposal: Account<'info, Proposal>,
 
     #[account(init, seeds = [b"vote_account".as_ref(), proposal_id.to_le_bytes().as_ref(), user.key.as_ref()] , bump = vote_account_bump, payer = user, space = Vote::LEN)]
