@@ -84,7 +84,7 @@ mod anchor_voting {
 #[derive(Accounts)]
 pub struct InitializeVoting<'info> {
     // base account which holds all proposals
-    #[account(init, payer = user, space = 10240)]
+    #[account(init, payer = user, space = 1000)]
     pub base_account: Account<'info, BaseAccount>,
     #[account(mut)]
     pub user: Signer<'info>,

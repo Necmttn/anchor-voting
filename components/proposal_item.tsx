@@ -1,18 +1,13 @@
-import { IdlTypes } from "@project-serum/anchor";
+import { BN, IdlTypes, Program, ProgramAccount } from "@project-serum/anchor";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
-import { Button, message, Progress } from "antd";
+import { Button, message, Progress, Spin } from "antd";
 import React, { useEffect } from "react";
-import { AnchorVoting } from "../anchor-voting/target/types/anchor_voting";
-import { voteForProposal } from "../solana";
+import { useVotesForProposal, voteForProposal } from "../solana";
 import Identicon from "react-identicons";
 import Countdown from "antd/lib/statistic/Countdown";
 
-export const ProposalItem = ({
-  proposal,
-}: {
-  proposal: IdlTypes<AnchorVoting>["Proposal"];
-}) => {
+export const ProposalItem = ({ proposal }: { proposal: any }) => {
   const { connected } = useWallet();
   const handleOnVote = async (vote: boolean) => {
     if (!connected) {
@@ -22,10 +17,12 @@ export const ProposalItem = ({
     await voteForProposal(proposal.id, vote);
   };
   const { publicKey } = useWallet();
-  const hasVoted =
-    publicKey && proposal.votedUsers.some((k) => k.equals(publicKey));
+  // const hasVoted =
+  //   publicKey && proposal.votedUsers.some((k) => k.equals(publicKey));
+  const hasVoted = false;
   const voteYes = proposal.voteYes.toNumber();
   const voteNo = proposal.voteNo.toNumber();
+  const voteCount = voteYes + voteNo;
   const endTimeStamp = (proposal.endTimeStamp as any).toNumber() * 1000;
   const [isExpired, setIsExpired] = React.useState(endTimeStamp < +new Date());
 
@@ -89,8 +86,8 @@ export const ProposalItem = ({
         </div>
         <Progress
           showInfo={false}
-          percent={proposal.votedUsers.length > 0 ? 100 : 0}
-          success={{ percent: (voteNo / (voteNo + voteYes)) * 100 }}
+          percent={voteCount > 0 ? 100 : 0}
+          success={{ percent: (voteNo / voteCount) * 100 }}
           status={"active"}
         />
       </div>
@@ -102,7 +99,8 @@ export const ProposalItem = ({
           {proposal.description as string}
         </p>
       </div>
-      {proposal.votedUsers.length > 0 ? (
+      <Voters proposalId={proposal.id} />
+      {/* {voteCount > 0 ? (
         <div className={"px-4 mt-4"}>
           <h2 className={"font-bold text-lg"}>Participants:</h2>
           <div className={"shadow-inner bg-gray-50 p-2 grid grid-cols-3 gap-4"}>
@@ -111,12 +109,33 @@ export const ProposalItem = ({
             ))}
           </div>
         </div>
-      ) : null}
+      ) : null} */}
       <div className={"py-2 px-4 mt-4"}>
         <div className="flex space-x-4">
           <span className={"text-gray-700 font-bold"}>Proposed by:</span>
           <WalletItem publicKey={proposal.owner} />
         </div>
+      </div>
+    </div>
+  );
+};
+
+const Voters = ({ proposalId }: { proposalId: BN }) => {
+  const { voters, isLoading } = useVotesForProposal(proposalId);
+  return (
+    <div className={"px-4 mt-4"}>
+      <h2 className={"font-bold text-lg"}>Participants:</h2>
+      <div className={"shadow-inner bg-gray-50 p-2 grid grid-cols-3 gap-4"}>
+        {!isLoading ? (
+          voters?.map((v) => (
+            <WalletItem
+              key={v.account.owner.toString()}
+              publicKey={v.account.owner}
+            />
+          ))
+        ) : (
+          <Spin />
+        )}
       </div>
     </div>
   );

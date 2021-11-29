@@ -10,6 +10,7 @@ import { AnchorVoting } from "../anchor-voting/target/types/anchor_voting";
 import idl from "./idl.json";
 import kp from "../keypair.json";
 import useSWR, { mutate } from "swr";
+import * as bs58 from "bs58";
 
 export const PROGRAM_ID = new PublicKey(idl.metadata.address);
 
@@ -121,20 +122,65 @@ const getProgram = (): Program<AnchorVoting> => {
   return program;
 };
 
-const programFetcher = async (...args: any[]) => {
-  const provider = getProvider();
-  const program: Program<AnchorVoting> = new Program(
-    idl as any,
-    PROGRAM_ID,
-    provider
-  );
-  return program.account.baseAccount.fetch(baseAccount.publicKey);
-};
-
 export const useBaseAccount = () => {
+  const programFetcher = async (...args: any[]) => {
+    const provider = getProvider();
+    const program: Program<AnchorVoting> = new Program(
+      idl as any,
+      PROGRAM_ID,
+      provider
+    );
+    return program.account.baseAccount.fetch(baseAccount.publicKey);
+  };
   const { data, error } = useSWR(`/baseAccount`, programFetcher);
   return {
     baseAccount: data,
+    isLoading: !error && !data,
+    isError: error,
+  };
+};
+
+export const useProposaList = () => {
+  const proposalListFetcher = async (...args: any[]) => {
+    const provider = getProvider();
+    const program: Program<AnchorVoting> = new Program(
+      idl as any,
+      PROGRAM_ID,
+      provider
+    );
+    return await program.account.proposal.all();
+  };
+  const { data, error } = useSWR(`/proposal`, proposalListFetcher);
+  return {
+    proposalList: data,
+    isLoading: !error && !data,
+    isError: error,
+  };
+};
+
+export const useVotesForProposal = (id: BN) => {
+  const proposalVotesFetcher = async (...args: any[]) => {
+    const provider = getProvider();
+    const program: Program<AnchorVoting> = new Program(
+      idl as any,
+      PROGRAM_ID,
+      provider
+    );
+    return await program.account.vote.all([
+      {
+        memcmp: {
+          offset: 8, // Discriminator.
+          bytes: bs58.encode(id.toBuffer()),
+        },
+      },
+    ]);
+  };
+  const { data, error } = useSWR(
+    `/proposal/${id.toNumber()}/votes`,
+    proposalVotesFetcher
+  );
+  return {
+    voters: data,
     isLoading: !error && !data,
     isError: error,
   };
