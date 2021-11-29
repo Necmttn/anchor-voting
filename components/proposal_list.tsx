@@ -26,7 +26,9 @@ export const ProposalList = () => {
   );
 };
 
-export const ProposalItemSmall = ({ proposal }) => {
+export const ProposalItemSmall: React.FC<{ proposal: any }> = ({
+  proposal,
+}) => {
   const voteYes = proposal.voteYes.toNumber();
   const voteNo = proposal.voteNo.toNumber();
   const endTimeStamp = (proposal.endTimeStamp as any).toNumber() * 1000;
