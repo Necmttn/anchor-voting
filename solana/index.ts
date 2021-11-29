@@ -11,6 +11,7 @@ import idl from "./idl.json";
 import kp from "../keypair.json";
 import useSWR, { mutate } from "swr";
 import * as bs58 from "bs58";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 export const PROGRAM_ID = new PublicKey(idl.metadata.address);
 
@@ -188,6 +189,44 @@ export const useProposal = (id: number) => {
   return {
     proposal: data && data[0],
     isLoading: !error && !data,
+    isError: error,
+  };
+};
+
+export const useGetUserVoteForProposal = (id: number) => {
+  const { publicKey } = useWallet();
+
+  const proposalVotesFetcher = async (...args: any[]) => {
+    const provider = getProvider();
+    const program: Program<AnchorVoting> = new Program(
+      idl as any,
+      PROGRAM_ID,
+      provider
+    );
+    return await program.account.vote.all([
+      {
+        memcmp: {
+          offset: 8, // Discriminator.
+          bytes: bs58.encode(getNumberBuffer(id)),
+        },
+      },
+      {
+        memcmp: {
+          offset: 17, // Discriminator.
+          bytes: bs58.encode(publicKey?.toBuffer() as Buffer),
+        },
+      },
+    ]);
+  };
+
+  const { data, error } = useSWR(
+    `/proposal/${id}/votes/${publicKey?.toString()}`,
+    proposalVotesFetcher
+  );
+
+  return {
+    vote: data && data[0],
+    isLoading: !error && !data && !publicKey,
     isError: error,
   };
 };

@@ -1,7 +1,7 @@
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Button, message, Progress } from "antd";
 import React, { useEffect } from "react";
-import { voteForProposal } from "../solana";
+import { useGetUserVoteForProposal, voteForProposal } from "../solana";
 import Countdown from "antd/lib/statistic/Countdown";
 import { WalletItem } from "./wallet_item";
 import { VoteList } from "./vote_list";
@@ -22,10 +22,11 @@ export const ProposalItem = ({
     }
     await voteForProposal(proposal.id, vote);
   };
+  const { vote } = useGetUserVoteForProposal(proposal.id.toNumber());
   const { publicKey } = useWallet();
   // const hasVoted =
   //   publicKey && proposal.votedUsers.some((k) => k.equals(publicKey));
-  const hasVoted = false;
+  const hasVoted = vote?.account;
   const voteYes = proposal.voteYes.toNumber();
   const voteNo = proposal.voteNo.toNumber();
   const voteCount = voteYes + voteNo;
