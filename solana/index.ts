@@ -30,20 +30,45 @@ const getProvider = () => {
   return provider;
 };
 
+const getNumberBuffer = (total: number, alloc = 8) => {
+  const totalProposalAccountBuf = Buffer.alloc(alloc);
+  totalProposalAccountBuf.writeUIntLE(total, 0, 6);
+  return totalProposalAccountBuf;
+};
+
 export const createProposal = async (proposal: {
   title: string;
   description: string;
 }) => {
   const provider = getProvider();
   const program = getProgram();
-  await program.rpc.addProposal(proposal.title, proposal.description, {
-    accounts: {
-      baseAccount: baseAccount.publicKey,
-      user: provider.wallet.publicKey,
-    },
-  });
+  const account = await program.account.baseAccount.fetch(
+    baseAccount.publicKey
+  );
+  const proposalId = getNumberBuffer(account.totalProposalCount.toNumber());
+  const [proposalAccountPublicKey, accountBump] =
+    await web3.PublicKey.findProgramAddress(
+      [Buffer.from("proposal_account"), proposalId],
+      PROGRAM_ID
+    );
+
+  await program.rpc.addProposal(
+    new BN(accountBump),
+    account.totalProposalCount,
+    proposal.title,
+    proposal.description,
+    {
+      accounts: {
+        baseAccount: baseAccount.publicKey,
+        proposal: proposalAccountPublicKey,
+        user: provider.wallet.publicKey,
+        systemProgram: SystemProgram.programId,
+      },
+    }
+  );
   // refetch the base account
   mutate("/baseAccount");
+  mutate("/proposal");
 };
 
 export const voteForProposal = async (id: BN, vote: boolean) => {
@@ -51,14 +76,31 @@ export const voteForProposal = async (id: BN, vote: boolean) => {
   try {
     const provider = getProvider();
     const program = getProgram();
-    await program.rpc.voteForProposal(new BN(id), vote, {
+
+    const [proposalAccountPublicKey] = await web3.PublicKey.findProgramAddress(
+      [Buffer.from("proposal_account"), id.toBuffer()],
+      PROGRAM_ID
+    );
+
+    const [voteAccountPublicKey, voteBump] =
+      await web3.PublicKey.findProgramAddress(
+        [
+          Buffer.from("vote_account"),
+          id.toBuffer(),
+          provider.wallet.publicKey.toBuffer(),
+        ],
+        PROGRAM_ID
+      );
+    await program.rpc.voteForProposal(voteBump, new BN(id), true, {
       accounts: {
-        baseAccount: baseAccount.publicKey,
+        proposal: proposalAccountPublicKey,
         user: provider.wallet.publicKey,
+        vote: voteAccountPublicKey,
+        systemProgram: SystemProgram.programId,
       },
     });
-    // refetch the base account
-    mutate("/baseAccount");
+    mutate("/proposal");
+    mutate(`/proposal/${id.toNumber()}`);
     message.success("Voted");
   } catch (err) {
     message.error((err as Error)?.message);

@@ -2,6 +2,7 @@
 .anchor
 .DS_Store
 target/*
+test-ledger
 !target/types
 !target/idl
 **/*.rs.bk

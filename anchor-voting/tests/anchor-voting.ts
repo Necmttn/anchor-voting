@@ -3,9 +3,7 @@ import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
 import { LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
 import assert from "assert";
-import { base64 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 import * as bs58 from "bs58";
-import { buffer } from "stream/consumers";
 
 describe("anchor-voting", () => {
   // Configure the client to use the local cluster.
@@ -20,25 +18,8 @@ describe("anchor-voting", () => {
   const getNumberBuffer = (total: number, alloc = 8) => {
     const totalProposalAccountBuf = Buffer.alloc(alloc);
     totalProposalAccountBuf.writeUIntLE(total, 0, 6);
-    totalProposalAccountBuf.write;
     return totalProposalAccountBuf;
   };
-
-  /**
-   * BYTE   8-bit unsigned                          buf.writeUInt8()
-   * SBYTE  8-bit signed                            buf.writeInt8()
-   * BOOL   8-bit boolean (0x00=False, 0xFF=True)   buf.fill(0x00) || buf.fill(0xFF)
-   * CHAR   8-bit single ASCII character            buf.from('Text', 'ascii') - Make 8-bit?
-   * UNI    16-bit single unicode character         buf.from('A', 'utf16le') - Correct?
-   * SHORT  16-bit signed                           buf.writeInt16BE() - @see https://www.reddit.com/r/node/comments/9hob2u/buffer_endianness_little_endian_or_big_endian_how/
-   * USHORT 16-bit unsigned                         buf.writeUInt16BE() - @see https://www.reddit.com/r/node/comments/9hob2u/buffer_endianness_little_endian_or_big_endian_how/
-   * INT    32-bit signed                           buf.writeInt32BE - @see https://www.reddit.com/r/node/comments/9hob2u/buffer_endianness_little_endian_or_big_endian_how/
-   * UINT   32-bit unsigned                         buf.writeUInt32BE - @see https://www.reddit.com/r/node/comments/9hob2u/buffer_endianness_little_endian_or_big_endian_how/
-   */
-
-  // eslint-disable-next-line prettier/prettier
-  const TRUE = Buffer.alloc(1).fill(0xFF);
-  const FALSE = Buffer.alloc(1).fill(0x00);
 
   const newUser = anchor.web3.Keypair.generate();
   before(async () => {
