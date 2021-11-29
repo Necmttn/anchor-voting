@@ -5,6 +5,7 @@ import { LAMPORTS_PER_SOL, SystemProgram } from "@solana/web3.js";
 import assert from "assert";
 import { base64 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 import * as bs58 from "bs58";
+import { buffer } from "stream/consumers";
 
 describe("anchor-voting", () => {
   // Configure the client to use the local cluster.
@@ -35,7 +36,8 @@ describe("anchor-voting", () => {
    * UINT   32-bit unsigned                         buf.writeUInt32BE - @see https://www.reddit.com/r/node/comments/9hob2u/buffer_endianness_little_endian_or_big_endian_how/
    */
 
-  const TRUE = Buffer.alloc(1).fill(0xff);
+  // eslint-disable-next-line prettier/prettier
+  const TRUE = Buffer.alloc(1).fill(0xFF);
   const FALSE = Buffer.alloc(1).fill(0x00);
 
   const newUser = anchor.web3.Keypair.generate();
@@ -57,12 +59,11 @@ describe("anchor-voting", () => {
       },
       signers: [baseAccount],
     });
-    console.log("Your transaction signature", tx);
 
     const account = await program.account.baseAccount.fetch(
       baseAccount.publicKey
     );
-    console.log("Your account", account);
+    assert.equal(account.totalProposalCount, 0);
   });
 
   it("Can add a proposal!", async () => {
@@ -76,11 +77,6 @@ describe("anchor-voting", () => {
         [Buffer.from("proposal_account"), proposalId],
         anchor.workspace.AnchorVoting.programId
       );
-    console.log({
-      proposalAccountPublicKey: proposalAccountPublicKey.toString(),
-      bump: accountBump,
-      seed: [Buffer.from("proposal_account"), proposalId],
-    });
     await program.rpc.addProposal(
       new anchor.BN(accountBump),
       account.totalProposalCount,
@@ -97,7 +93,6 @@ describe("anchor-voting", () => {
     );
 
     account = await program.account.baseAccount.fetch(baseAccount.publicKey);
-    console.log("Your account", account);
 
     const secondProposalId = getNumberBuffer(
       account.totalProposalCount.toNumber()
@@ -129,7 +124,6 @@ describe("anchor-voting", () => {
 
     const proposals = await program.account.proposal.all();
     assert.ok(proposals.length === account.totalProposalCount.toNumber());
-    console.log("🗳 Base Account ", account);
   });
 
   it("Can vote for a proposal!", async () => {
@@ -149,7 +143,6 @@ describe("anchor-voting", () => {
         ],
         anchor.workspace.AnchorVoting.programId
       );
-    console.log(voteAccountPublicKey.toString(), voteBump);
     await program.rpc.voteForProposal(voteBump, new anchor.BN(0), true, {
       accounts: {
         proposal: proposalAccountPublicKey,
@@ -159,7 +152,7 @@ describe("anchor-voting", () => {
       },
     });
     const vote = await program.account.vote.all();
-    assert.ok(vote.length === 1);
+    assert.equal(vote.length, 1);
   });
 
   it("Can vote for a second proposal!", async () => {
@@ -179,7 +172,6 @@ describe("anchor-voting", () => {
         ],
         anchor.workspace.AnchorVoting.programId
       );
-    console.log(voteAccountPublicKey.toString(), voteBump);
     await program.rpc.voteForProposal(voteBump, new anchor.BN(1), false, {
       accounts: {
         proposal: proposalAccountPublicKey,
@@ -211,7 +203,6 @@ describe("anchor-voting", () => {
             ],
             anchor.workspace.AnchorVoting.programId
           );
-        console.log(voteAccountPublicKey.toString(), voteBump);
         await program.rpc.voteForProposal(voteBump, new anchor.BN(0), true, {
           accounts: {
             proposal: proposalAccountPublicKey,
@@ -220,15 +211,6 @@ describe("anchor-voting", () => {
             systemProgram: SystemProgram.programId,
           },
         });
-
-        // await program.rpc.voteForProposal(voteBump, new anchor.BN(1), false, {
-        //   accounts: {
-        //     proposal: proposalAccountPublicKey,
-        //     user: provider.wallet.publicKey,
-        //     vote: voteAccountPublicKey,
-        //     systemProgram: SystemProgram.programId,
-        //   },
-        // });
       },
       {
         name: "Error",
@@ -236,7 +218,7 @@ describe("anchor-voting", () => {
       }
     );
     const vote = await program.account.vote.all();
-    assert.ok(vote.length === 1);
+    assert.equal(vote.length, 2);
   });
 
   it("Can not vote for a proposal that does not exist!", async () => {
@@ -280,7 +262,7 @@ describe("anchor-voting", () => {
     );
 
     const vote = await program.account.vote.all();
-    assert.ok(vote.length === 1);
+    assert.equal(vote.length, 2);
   });
 
   it("New User Can Vote to first proposal", async () => {
@@ -313,7 +295,7 @@ describe("anchor-voting", () => {
     });
 
     const vote = await program.account.vote.all();
-    assert.ok(vote.length === 2);
+    assert.equal(vote.length, 3);
   });
 
   it("New user can vote to second proposal", async () => {
@@ -329,13 +311,6 @@ describe("anchor-voting", () => {
     );
 
     assert.ok(secondProposal.title === "Second Test Title");
-
-    console.log([
-      Buffer.from("vote_account"),
-      secondProposalId,
-      newUser.publicKey.toBuffer(),
-    ]);
-
     const [secondVoteAccountPublicKey, secondVoteBump] =
       await anchor.web3.PublicKey.findProgramAddress(
         [
@@ -345,8 +320,6 @@ describe("anchor-voting", () => {
         ],
         anchor.workspace.AnchorVoting.programId
       );
-
-    console.log(secondVoteAccountPublicKey.toString(), secondVoteBump);
 
     await program.rpc.voteForProposal(secondVoteBump, secondProposal.id, true, {
       accounts: {
@@ -359,7 +332,7 @@ describe("anchor-voting", () => {
     });
 
     const vote = await program.account.vote.all();
-    assert.ok(vote.length === 3);
+    assert.equal(vote.length, 4);
   });
 
   it("We can get votes for Proposals", async () => {
@@ -379,11 +352,14 @@ describe("anchor-voting", () => {
       {
         memcmp: {
           offset: 8, // Discriminator.
-          bytes: bs58.encode(Buffer.concat([getNumberBuffer(0), TRUE])),
+          bytes: bs58.encode(
+            Buffer.concat([getNumberBuffer(0), Buffer.from([1])])
+          ),
         },
       },
     ]);
-    console.log(proposalOneYesVotes);
+    const allVotes = await program.account.vote.all();
+    assert.equal(allVotes.length, 4);
     assert.equal(proposalOneYesVotes.length, 1);
     assert.ok(proposalOneYesVotes[0].account.vote === true);
   });
@@ -393,12 +369,13 @@ describe("anchor-voting", () => {
       {
         memcmp: {
           offset: 8, // Discriminator.
-          bytes: bs58.encode(Buffer.concat([getNumberBuffer(0), FALSE])),
+          bytes: bs58.encode(
+            Buffer.concat([getNumberBuffer(1), Buffer.from([0])])
+          ),
         },
       },
     ]);
-    console.log(proposalOneNoVotes);
-    assert.ok(proposalOneNoVotes.length === 1);
+    assert.equal(proposalOneNoVotes.length, 1);
     assert.ok(proposalOneNoVotes[0].account.vote === false);
   });
 });
