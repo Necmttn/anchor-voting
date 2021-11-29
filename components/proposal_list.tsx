@@ -52,7 +52,7 @@ export const ProposalItemSmall: React.FC<{ proposal: any }> = ({
     <Link href={`/${proposal.id.toNumber()}`} passHref>
       <div
         className={
-          "p-4 rounded shadow flex items-center cursor-pointer hover:scale-105 bg-white hover:border-blue-600"
+          "p-4 rounded shadow flex items-center cursor-pointer hover:scale-105 bg-white hover:border-blue-600 mt-2"
         }
       >
         <span className={"text-gray-700 text-2xl mr-4 cursor-pointer"}>

@@ -23,9 +23,6 @@ export const ProposalItem = ({
     await voteForProposal(proposal.id, vote);
   };
   const { vote } = useGetUserVoteForProposal(proposal.id.toNumber());
-  const { publicKey } = useWallet();
-  // const hasVoted =
-  //   publicKey && proposal.votedUsers.some((k) => k.equals(publicKey));
   const hasVoted = vote?.account;
   const voteYes = proposal.voteYes.toNumber();
   const voteNo = proposal.voteNo.toNumber();
