@@ -112,6 +112,18 @@
   ],
   "accounts": [
     {
+      "name": "BaseAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "totalProposalCount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "Proposal",
       "type": {
         "kind": "struct",
@@ -147,6 +159,10 @@
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "endTimeStamp",
+            "type": "u128"
           }
         ]
       }
@@ -178,22 +194,6 @@
           }
         ]
       }
-    },
-    {
-      "name": "BaseAccount",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "totalProposalCount",
-            "type": "u64"
-          },
-          {
-            "name": "endTimeStamp",
-            "type": "u128"
-          }
-        ]
-      }
     }
   ],
   "errors": [
@@ -216,6 +216,11 @@
       "code": 303,
       "name": "DescriptionIsTooLong",
       "msg": "Description is too long. maximum: 1024 character"
+    },
+    {
+      "code": 304,
+      "name": "ProposalHasEnded",
+      "msg": "Proposal deadline is past"
     }
   ],
   "metadata": {
