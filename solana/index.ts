@@ -166,6 +166,32 @@ export const useProposaList = () => {
   };
 };
 
+export const useProposal = (id: number) => {
+  const proposalFetcher = async (...args: any[]) => {
+    const provider = getProvider();
+    const program: Program<AnchorVoting> = new Program(
+      idl as any,
+      PROGRAM_ID,
+      provider
+    );
+    return await program.account.proposal.all([
+      {
+        memcmp: {
+          offset: 8, // Discriminator.
+          bytes: bs58.encode(getNumberBuffer(id)),
+        },
+      },
+    ]);
+  };
+
+  const { data, error } = useSWR(`/proposal/${id}`, proposalFetcher);
+  return {
+    proposal: data && data[0],
+    isLoading: !error && !data,
+    isError: error,
+  };
+};
+
 export const useVotesForProposal = (id: BN) => {
   const proposalVotesFetcher = async (...args: any[]) => {
     const provider = getProvider();
