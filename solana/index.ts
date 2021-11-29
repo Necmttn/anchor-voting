@@ -113,6 +113,7 @@ export const voteForProposal = async (id: BN, vote: boolean) => {
     mutate("/proposal");
     mutate(`/proposal/${id.toNumber()}`);
     mutate(`/proposal/${id.toNumber()}/votes`);
+    mutate(`/proposal/${id.toNumber()}/votes/${provider.wallet.publicKey}`);
     message.success("Voted");
   } catch (err) {
     message.error((err as Error)?.message);

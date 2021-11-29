@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { useProposaList } from "../solana";
-import { ProposalItem } from "./proposal_item";
-import { Button, Spin } from "antd";
+import { Spin } from "antd";
 import Link from "next/link";
 import Countdown from "antd/lib/statistic/Countdown";
 
