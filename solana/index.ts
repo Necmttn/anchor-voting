@@ -47,6 +47,7 @@ export const createProposal = async (proposal: {
   const account = await program.account.baseAccount.fetch(
     baseAccount.publicKey
   );
+  console.log("ACCOUNT", account);
   const proposalId = getNumberBuffer(account.totalProposalCount.toNumber());
   const [proposalAccountPublicKey, accountBump] =
     await web3.PublicKey.findProgramAddress(
@@ -54,6 +55,11 @@ export const createProposal = async (proposal: {
       PROGRAM_ID
     );
 
+  console.log("PROPOSAL ID", {
+    proposalId,
+    proposalAccountPublicKey,
+    accountBump,
+  });
   await program.rpc.addProposal(
     new BN(accountBump),
     account.totalProposalCount,
@@ -80,8 +86,9 @@ export const voteForProposal = async (id: BN, vote: boolean) => {
     const provider = getProvider();
     const program = getProgram();
 
+    const proposalId = getNumberBuffer(id.toNumber());
     const [proposalAccountPublicKey] = await web3.PublicKey.findProgramAddress(
-      [Buffer.from("proposal_account"), id.toBuffer()],
+      [Buffer.from("proposal_account"), proposalId],
       PROGRAM_ID
     );
 
@@ -89,12 +96,12 @@ export const voteForProposal = async (id: BN, vote: boolean) => {
       await web3.PublicKey.findProgramAddress(
         [
           Buffer.from("vote_account"),
-          id.toBuffer(),
+          proposalId,
           provider.wallet.publicKey.toBuffer(),
         ],
         PROGRAM_ID
       );
-    await program.rpc.voteForProposal(voteBump, new BN(id), true, {
+    await program.rpc.voteForProposal(voteBump, new BN(id), vote, {
       accounts: {
         proposal: proposalAccountPublicKey,
         user: provider.wallet.publicKey,
@@ -104,6 +111,7 @@ export const voteForProposal = async (id: BN, vote: boolean) => {
     });
     mutate("/proposal");
     mutate(`/proposal/${id.toNumber()}`);
+    mutate(`/proposal/${id.toNumber()}/votes`);
     message.success("Voted");
   } catch (err) {
     message.error((err as Error)?.message);
@@ -170,7 +178,7 @@ export const useVotesForProposal = (id: BN) => {
       {
         memcmp: {
           offset: 8, // Discriminator.
-          bytes: bs58.encode(id.toBuffer()),
+          bytes: bs58.encode(getNumberBuffer(id.toNumber())),
         },
       },
     ]);

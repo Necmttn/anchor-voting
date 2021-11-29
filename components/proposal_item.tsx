@@ -1,11 +1,12 @@
 import { BN, IdlTypes, Program, ProgramAccount } from "@project-serum/anchor";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, VoteAccount } from "@solana/web3.js";
 import { Button, message, Progress, Spin } from "antd";
 import React, { useEffect } from "react";
 import { useVotesForProposal, voteForProposal } from "../solana";
 import Identicon from "react-identicons";
 import Countdown from "antd/lib/statistic/Countdown";
+import { AnchorVoting } from "../anchor-voting/target/types/anchor_voting";
 
 export const ProposalItem = ({ proposal }: { proposal: any }) => {
   const { connected } = useWallet();
@@ -99,21 +100,13 @@ export const ProposalItem = ({ proposal }: { proposal: any }) => {
           {proposal.description as string}
         </p>
       </div>
-      <Voters proposalId={proposal.id} />
-      {/* {voteCount > 0 ? (
-        <div className={"px-4 mt-4"}>
-          <h2 className={"font-bold text-lg"}>Participants:</h2>
-          <div className={"shadow-inner bg-gray-50 p-2 grid grid-cols-3 gap-4"}>
-            {proposal.votedUsers.map((v) => (
-              <WalletItem key={v.toBase58()} publicKey={v} />
-            ))}
-          </div>
-        </div>
-      ) : null} */}
+      {voteCount > 0 ? <Voters proposalId={proposal.id} /> : null}
       <div className={"py-2 px-4 mt-4"}>
-        <div className="flex space-x-4">
-          <span className={"text-gray-700 font-bold"}>Proposed by:</span>
-          <WalletItem publicKey={proposal.owner} />
+        <div className="flex flex-col ">
+          <span className={"text-gray-700 font-bold flex-1 mb-2 text-lg"}>
+            Proposed by:
+          </span>
+          <WalletItem pubKey={proposal.owner} />
         </div>
       </div>
     </div>
@@ -122,16 +115,14 @@ export const ProposalItem = ({ proposal }: { proposal: any }) => {
 
 const Voters = ({ proposalId }: { proposalId: BN }) => {
   const { voters, isLoading } = useVotesForProposal(proposalId);
+  console.log(voters);
   return (
     <div className={"px-4 mt-4"}>
       <h2 className={"font-bold text-lg"}>Participants:</h2>
       <div className={"shadow-inner bg-gray-50 p-2 grid grid-cols-3 gap-4"}>
         {!isLoading ? (
           voters?.map((v) => (
-            <WalletItem
-              key={v.account.owner.toString()}
-              publicKey={v.account.owner}
-            />
+            <VoteItem key={v.publicKey.toString()} vote={v.account} />
           ))
         ) : (
           <Spin />
@@ -141,17 +132,32 @@ const Voters = ({ proposalId }: { proposalId: BN }) => {
   );
 };
 
-const WalletItem: React.FC<{ publicKey: PublicKey }> = ({ publicKey }) => {
-  const pubKeyString = publicKey.toString();
+const VoteItem: React.FC<{
+  vote: any;
+}> = ({ vote }) => {
+  console.log(vote);
+  return (
+    <div
+      className={`${
+        vote.vote ? "bg-green-100" : "bg-red-100"
+      } p-1 items-center rounded flex justify-center`}
+    >
+      <WalletItem pubKey={vote.voter} />
+    </div>
+  );
+};
+
+const WalletItem: React.FC<{ pubKey: PublicKey }> = ({ pubKey }) => {
+  const pubKeyString = pubKey.toString();
   const shortPublicKey = `${pubKeyString.slice(0, 6)}...${pubKeyString.slice(
     pubKeyString.length - 6
   )}`;
   return (
-    <div className={"flex"}>
-      <div className={"w-8 h-8"}>
-        <Identicon string={publicKey.toString()} size={20} />
+    <div className={"flex w-full group"}>
+      <Identicon string={pubKeyString} size={20} />
+      <div className={"pl-2 font-mono  text-gray-600 group-hover:text-black"}>
+        {shortPublicKey}
       </div>
-      <div className={"font-mono  text-gray-600"}>{shortPublicKey}</div>
     </div>
   );
 };

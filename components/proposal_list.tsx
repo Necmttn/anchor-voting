@@ -5,7 +5,6 @@ import { Spin } from "antd";
 
 export const ProposalList = () => {
   const { proposalList, isLoading } = useProposaList();
-
   return (
     <div className={"w-full flex flex-col py-8 h-full "}>
       <h1 className={"text-2xl font-mono"}>Proposal List</h1>

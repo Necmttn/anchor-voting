@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("HRNkDCeaArkBn2mM3pMa1JwAMmgaNgWpXnPYeNq5eFvg");
+declare_id!("pz4RhBKoR5kGHM8UHnzse6pC7uMTQbPf5dkWTgeochn");
 
 #[program]
 mod anchor_voting {
@@ -84,7 +84,7 @@ mod anchor_voting {
 #[derive(Accounts)]
 pub struct InitializeVoting<'info> {
     // base account which holds all proposals
-    #[account(init, payer = user, space = 1000)]
+    #[account(init, payer = user, space = 1000)] // TODO: calculate correct size for it
     pub base_account: Account<'info, BaseAccount>,
     #[account(mut)]
     pub user: Signer<'info>,

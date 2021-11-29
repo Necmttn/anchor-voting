@@ -7,7 +7,7 @@ import moment from "moment";
 export const CreateProposalModal = () => {
   const [visible, setVisible] = React.useState(false);
   const [confirmLoading, setConfirmLoading] = React.useState(false);
-  const { connected, connect } = useWallet();
+  const { connected } = useWallet();
   const [campaign, setCampaign] = React.useState({
     title: "",
     description: "",
