@@ -14,6 +14,7 @@ describe("anchor-voting", () => {
 
   // The Account to create.
   const baseAccount = anchor.web3.Keypair.generate();
+  const DAY_IN_UNIX = 24 * 60 * 60 * 1000;
 
   const getNumberBuffer = (total: number, alloc = 8) => {
     const totalProposalAccountBuf = Buffer.alloc(alloc);
@@ -48,7 +49,7 @@ describe("anchor-voting", () => {
   });
 
   it("Can add a proposal!", async () => {
-    let account = await program.account.baseAccount.fetch(
+    const account = await program.account.baseAccount.fetch(
       baseAccount.publicKey
     );
     console.log("Your account", account);
@@ -58,11 +59,13 @@ describe("anchor-voting", () => {
         [Buffer.from("proposal_account"), proposalId],
         anchor.workspace.AnchorVoting.programId
       );
+
     await program.rpc.addProposal(
       new anchor.BN(accountBump),
       account.totalProposalCount,
       "Test Title",
       "Test Description",
+      new anchor.BN(+new Date() + 1 * DAY_IN_UNIX),
       {
         accounts: {
           baseAccount: baseAccount.publicKey,
@@ -72,8 +75,12 @@ describe("anchor-voting", () => {
         },
       }
     );
+  });
 
-    account = await program.account.baseAccount.fetch(baseAccount.publicKey);
+  it("Can add a  second proposal!", async () => {
+    let account = await program.account.baseAccount.fetch(
+      baseAccount.publicKey
+    );
 
     const secondProposalId = getNumberBuffer(
       account.totalProposalCount.toNumber()
@@ -91,6 +98,7 @@ describe("anchor-voting", () => {
       account.totalProposalCount,
       "Second Test Title",
       "Second Test Description",
+      new anchor.BN(+new Date() + 2 * DAY_IN_UNIX),
       {
         accounts: {
           baseAccount: baseAccount.publicKey,
@@ -134,6 +142,10 @@ describe("anchor-voting", () => {
     });
     const vote = await program.account.vote.all();
     assert.equal(vote.length, 1);
+    const account = await program.account.baseAccount.fetch(
+      baseAccount.publicKey
+    );
+    assert.ok(account.totalProposalCount.toNumber() === 2);
   });
 
   it("Can vote for a second proposal!", async () => {

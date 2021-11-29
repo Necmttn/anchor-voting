@@ -63,6 +63,10 @@ export type AnchorVoting = {
         {
           "name": "description",
           "type": "string"
+        },
+        {
+          "name": "endTimeStamp",
+          "type": "u128"
         }
       ]
     },
@@ -108,6 +112,18 @@ export type AnchorVoting = {
   ],
   "accounts": [
     {
+      "name": "baseAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "totalProposalCount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "proposal",
       "type": {
         "kind": "struct",
@@ -143,6 +159,10 @@ export type AnchorVoting = {
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "endTimeStamp",
+            "type": "u128"
           }
         ]
       }
@@ -174,18 +194,6 @@ export type AnchorVoting = {
           }
         ]
       }
-    },
-    {
-      "name": "baseAccount",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "totalProposalCount",
-            "type": "u64"
-          }
-        ]
-      }
     }
   ],
   "errors": [
@@ -208,6 +216,11 @@ export type AnchorVoting = {
       "code": 303,
       "name": "DescriptionIsTooLong",
       "msg": "Description is too long. maximum: 1024 character"
+    },
+    {
+      "code": 304,
+      "name": "ProposalHasEnded",
+      "msg": "Proposal deadline is past"
     }
   ]
 };
@@ -277,6 +290,10 @@ export const IDL: AnchorVoting = {
         {
           "name": "description",
           "type": "string"
+        },
+        {
+          "name": "endTimeStamp",
+          "type": "u128"
         }
       ]
     },
@@ -322,6 +339,18 @@ export const IDL: AnchorVoting = {
   ],
   "accounts": [
     {
+      "name": "baseAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "totalProposalCount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "proposal",
       "type": {
         "kind": "struct",
@@ -357,6 +386,10 @@ export const IDL: AnchorVoting = {
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "endTimeStamp",
+            "type": "u128"
           }
         ]
       }
@@ -388,18 +421,6 @@ export const IDL: AnchorVoting = {
           }
         ]
       }
-    },
-    {
-      "name": "baseAccount",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "totalProposalCount",
-            "type": "u64"
-          }
-        ]
-      }
     }
   ],
   "errors": [
@@ -422,6 +443,11 @@ export const IDL: AnchorVoting = {
       "code": 303,
       "name": "DescriptionIsTooLong",
       "msg": "Description is too long. maximum: 1024 character"
+    },
+    {
+      "code": 304,
+      "name": "ProposalHasEnded",
+      "msg": "Proposal deadline is past"
     }
   ]
 };

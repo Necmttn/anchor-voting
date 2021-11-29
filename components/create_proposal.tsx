@@ -1,7 +1,8 @@
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Button, Input, message, Modal } from "antd";
+import { Button, DatePicker, Input, message, Modal } from "antd";
 import React from "react";
 import { createProposal } from "../solana";
+import moment from "moment";
 
 export const CreateProposalModal = () => {
   const [visible, setVisible] = React.useState(false);
@@ -10,6 +11,7 @@ export const CreateProposalModal = () => {
   const [campaign, setCampaign] = React.useState({
     title: "",
     description: "",
+    timeEnd: moment().endOf("day").unix(),
   });
   const setValue = (key: string, value: any) => {
     setCampaign({
@@ -32,10 +34,12 @@ export const CreateProposalModal = () => {
       await createProposal({
         title: campaign.title,
         description: campaign.description,
+        timeEnd: campaign.timeEnd,
       });
       setCampaign({
         title: "",
         description: "",
+        timeEnd: moment().endOf("day").unix(),
       });
       setVisible(false);
     } catch (err) {
@@ -49,6 +53,10 @@ export const CreateProposalModal = () => {
     setVisible(false);
   };
 
+  function disabledDate(current: any) {
+    // Can not select days before today and today
+    return current && current < moment().endOf("day");
+  }
   return (
     <>
       <Button type="primary" onClick={showModal}>
@@ -79,6 +87,17 @@ export const CreateProposalModal = () => {
           <Input.TextArea
             value={campaign.description}
             onChange={(e) => setValue("description", e.target.value)}
+          />
+        </div>
+        <div className={"my-2 flex flex-col"}>
+          <label className={"label"} htmlFor={"Campaign Name"}>
+            <span className={"label-text"}>Deadline</span>
+          </label>
+          <DatePicker
+            showTime
+            format="YYYY-MM-DD HH:mm:ss"
+            onOk={(e) => setValue("timeEnd", e?.unix())}
+            disabledDate={disabledDate}
           />
         </div>
       </Modal>

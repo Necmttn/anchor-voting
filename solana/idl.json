@@ -63,6 +63,10 @@
         {
           "name": "description",
           "type": "string"
+        },
+        {
+          "name": "endTimeStamp",
+          "type": "u128"
         }
       ]
     },
@@ -183,6 +187,10 @@
           {
             "name": "totalProposalCount",
             "type": "u64"
+          },
+          {
+            "name": "endTimeStamp",
+            "type": "u128"
           }
         ]
       }

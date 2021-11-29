@@ -5,7 +5,7 @@ anchor_voting = "HRNkDCeaArkBn2mM3pMa1JwAMmgaNgWpXnPYeNq5eFvg"
 url = "https://anchor.projectserum.com"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "/Users/necmttn/.config/solana/id.json"
 
 [scripts]

@@ -21,6 +21,7 @@ mod anchor_voting {
         proposal_id: u64,
         title: String,
         description: String,
+        end_time_stamp: u128,
     ) -> ProgramResult {
         let base_account = &mut ctx.accounts.base_account;
         let proposal = &mut ctx.accounts.proposal;
@@ -41,7 +42,7 @@ mod anchor_voting {
         proposal.vote_yes =  0;
         proposal.vote_no = 0;
         proposal.created_at = Clock::get()?.unix_timestamp;
-
+        proposal.end_time_stamp = end_time_stamp;
         proposal.bump = proposal_account_bump;
 
         // increment total proposal count
@@ -66,21 +67,10 @@ mod anchor_voting {
         vote_account.created_at =  Clock::get()?.unix_timestamp;
         vote_account.bump =  vote_account_bump;
 
-        // check if user has already voted on this proposal
-        // if proposal_account
-        //     .proposal
-        //     .voted_users
-        //     .contains(&*user.to_account_info().key)
-        // {
-        //     // return error if user has already voted on this proposal
-        //     return Err(ErrorCode::YouAlreadyVotedForThisProposal.into());
-        // }
-
-        // add user to voted users.
-        // proposal_account
-        //     .proposal
-        //     .voted_users
-        //     .push(*user.to_account_info().key);
+        if (Clock::get()?.unix_timestamp as u128) > proposal.end_time_stamp {
+            // return error if proposal has ended
+            return Err(ErrorCode::ProposalHasEnded.into());
+        }
 
         // corespoing vote count base on `vote`
         if vote {
@@ -130,6 +120,11 @@ pub struct VoteForProposal<'info> {
 }
 
 #[account]
+pub struct BaseAccount {
+    pub total_proposal_count: u64,
+}
+
+#[account]
 pub struct Proposal {
     pub id: u64, // unique id for each proposal
     pub owner: Pubkey,
@@ -139,6 +134,7 @@ pub struct Proposal {
     pub vote_yes: u64,
     pub vote_no: u64,
     pub bump: u8,
+    pub end_time_stamp: u128,
 }
 
 #[account]
@@ -148,12 +144,6 @@ pub struct Vote {
     pub voter: Pubkey,
     pub created_at: i64,
     pub bump: u8,
-}
-
-// Tell Solana what we want to store on this account.
-#[account]
-pub struct BaseAccount {
-    pub total_proposal_count: u64,
 }
 
 #[error]
@@ -166,6 +156,8 @@ pub enum ErrorCode {
     TitleIsTooLong,
     #[msg("Description is too long. maximum: 1024 character")]
     DescriptionIsTooLong,
+    #[msg("Proposal deadline is past")]
+    ProposalHasEnded,
 }
 
 const U64_LEN: usize = 8;

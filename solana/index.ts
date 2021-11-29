@@ -39,6 +39,7 @@ const getNumberBuffer = (total: number, alloc = 8) => {
 export const createProposal = async (proposal: {
   title: string;
   description: string;
+  timeEnd: number;
 }) => {
   const provider = getProvider();
   const program = getProgram();
@@ -57,6 +58,7 @@ export const createProposal = async (proposal: {
     account.totalProposalCount,
     proposal.title,
     proposal.description,
+    new BN(proposal.timeEnd),
     {
       accounts: {
         baseAccount: baseAccount.publicKey,
